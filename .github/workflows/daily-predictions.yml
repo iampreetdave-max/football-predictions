@@ -1,12 +1,18 @@
-name: Daily Football Predictions
+name: Daily Football Predictions - Enhanced
 
 on:
   schedule:
-    - cron: '0 6 * * *'  # 6 AM UTC daily
-  workflow_dispatch:  # Manual trigger
+    # Run every day at 6:00 AM UTC
+    # Adjust the cron schedule for your timezone
+    - cron: '0 6 * * *'
+    
+  # Allow manual triggering from GitHub Actions tab
+  workflow_dispatch:
 
-permissions:
-  contents: write  # Allow workflow to push changes
+# Prevent concurrent runs from conflicting
+concurrency:
+  group: predictions-workflow
+  cancel-in-progress: false
 
 jobs:
   generate-predictions:
@@ -16,8 +22,8 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v3
       with:
-        persist-credentials: true
-        fetch-depth: 0  # Fetch full history
+        token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 0  # Fetch full git history for proper rebasing
         
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -31,45 +37,71 @@ jobs:
         pip install -r requirements.txt
         
     - name: Step 1 - Fetch Today's Matches
+      env:
+        FOOTYSTATS_API_KEY: ${{ secrets.FOOTYSTATS_API_KEY }}
       run: python today_matches.py
+      continue-on-error: false
         
     - name: Step 2 - Extract Features
+      env:
+        FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
       run: python fetch_data.py
+      continue-on-error: false
         
     - name: Step 3 - Generate Predictions
       run: python predict.py
+      continue-on-error: false
         
     - name: Commit and push results
       run: |
         git config --local user.email "github-actions[bot]@users.noreply.github.com"
         git config --local user.name "github-actions[bot]"
         
-        # Pull latest changes to avoid conflicts
-        echo "📥 Pulling latest changes..."
-        git pull origin main --rebase || git pull origin master --rebase || echo "No remote changes"
+        # Pull latest changes first with rebase strategy to avoid conflicts
+        echo "🔄 Pulling latest changes..."
+        git pull --rebase origin main || git pull --rebase origin master || echo "Already up to date"
         
         # Add generated CSV files
         git add -f live.csv extracted_features_complete.csv best_match_predictions.csv 2>/dev/null || true
         
         # Check if there are changes to commit
         if git diff --staged --quiet; then
-          echo "✅ No new changes to commit - predictions are up to date"
+          echo "ℹ️  No changes to commit"
         else
+          echo "✅ Changes detected, committing..."
           git commit -m "🤖 Auto-update predictions - $(date +'%Y-%m-%d %H:%M:%S UTC')"
           
-          # Push with retry
-          echo "📤 Pushing changes..."
-          for i in {1..3}; do
-            if git push origin HEAD:main 2>/dev/null || git push origin HEAD:master 2>/dev/null; then
-              echo "✅ Predictions updated successfully"
-              exit 0
-            else
-              echo "⚠️ Push attempt $i/3 failed, pulling and retrying..."
-              git pull origin main --rebase 2>/dev/null || git pull origin master --rebase 2>/dev/null
-              sleep 2
+          # Push with retry logic to handle race conditions
+          max_retries=3
+          retry_count=0
+          
+          until [ $retry_count -ge $max_retries ]
+          do
+            echo "📤 Attempting to push (attempt $((retry_count+1))/$max_retries)..."
+            
+            if git push; then
+              echo "✅ Successfully pushed predictions!"
+              break
+            fi
+            
+            retry_count=$((retry_count+1))
+            
+            if [ $retry_count -lt $max_retries ]; then
+              echo "⚠️  Push failed, retrying in 5 seconds..."
+              git pull --rebase origin main || git pull --rebase origin master
+              sleep 5
             fi
           done
           
-          echo "❌ Failed to push after 3 attempts"
-          exit 1
+          if [ $retry_count -ge $max_retries ]; then
+            echo "❌ Failed to push after $max_retries attempts"
+            exit 1
+          fi
         fi
+    
+    # Optional: Add notification on failure
+    # Uncomment below if you want to be notified of failures
+    # - name: Notify on failure
+    #   if: failure()
+    #   run: |
+    #     echo "❌ Workflow failed! Check the logs at: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"

@@ -1,13 +1,12 @@
-name: Daily Football Predictions - Working
+name: Daily Football Predictions - Simple Working
 
 on:
   schedule:
+    # Run every day at 6:00 AM UTC (11:30 AM IST)
     - cron: '0 6 * * *'
+    
+  # Allow manual triggering
   workflow_dispatch:
-
-concurrency:
-  group: predictions-workflow
-  cancel-in-progress: false
 
 jobs:
   generate-predictions:
@@ -15,14 +14,13 @@ jobs:
     
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         fetch-depth: 0
-        ref: main
         
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.11'
         cache: 'pip'
@@ -46,23 +44,25 @@ jobs:
         git config --local user.email "github-actions[bot]@users.noreply.github.com"
         git config --local user.name "github-actions[bot]"
         
-        # THE KEY FIX: Pull before pushing!
+        # THE FIX: Pull before pushing to avoid conflicts
         echo "🔄 Syncing with remote..."
         git pull --rebase origin main || git pull --rebase origin master || echo "Already up to date"
         
-        # Add files
-        git add -f live.csv extracted_features_complete.csv best_match_predictions.csv 2>/dev/null || true
+        # Add generated CSV files
+        echo "📁 Adding prediction files..."
+        git add -f live.csv extracted_features_complete.csv best_match_predictions.csv
         
-        # Check for changes
+        # Check if there are changes
         if git diff --staged --quiet; then
-          echo "No changes to commit"
+          echo "ℹ️ No changes to commit"
           exit 0
         fi
         
-        # Commit
+        # Commit changes
+        echo "✅ Changes detected, committing..."
         git commit -m "🤖 Auto-update predictions - $(date +'%Y-%m-%d %H:%M:%S UTC')"
         
-        # Push with retry
+        # Push with retry logic (5 attempts)
         max_retries=5
         retry_count=0
         
@@ -70,29 +70,35 @@ jobs:
           retry_count=$((retry_count+1))
           echo "📤 Push attempt $retry_count/$max_retries..."
           
+          # Try main branch first
           if git push origin main 2>&1; then
-            echo "✅ Success!"
+            echo "✅ Successfully pushed to main!"
             exit 0
           fi
           
+          # Try master branch as fallback
           if git push origin master 2>&1; then
-            echo "✅ Success!"
+            echo "✅ Successfully pushed to master!"
             exit 0
           fi
           
+          # If not last attempt, sync and retry
           if [ $retry_count -lt $max_retries ]; then
             echo "⏳ Retrying in 10 seconds..."
             sleep 10
-            git pull --rebase origin main || git pull --rebase origin master || true
+            echo "🔄 Syncing again..."
+            git pull --rebase origin main 2>&1 || git pull --rebase origin master 2>&1 || true
           fi
         done
         
-        echo "❌ Failed after $max_retries attempts"
+        # All retries failed
+        echo "❌ Failed to push after $max_retries attempts"
         exit 1
     
-    - name: Upload predictions as artifact
+    # Optional: Upload as backup (using v4, not deprecated v3)
+    - name: Upload predictions as backup
       if: always()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: predictions-${{ github.run_number }}
         path: |

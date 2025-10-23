@@ -1,0 +1,42 @@
+name: Keep Streamlit App Alive
+
+on:
+  schedule:
+    # Run every 2 hours to keep the app active
+    # Streamlit free tier shuts down after inactivity
+    - cron: '0 */2 * * *'
+    
+  # Allow manual triggering
+  workflow_dispatch:
+
+jobs:
+  keep-alive:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        
+    - name: Install Playwright and dependencies
+      run: |
+        echo "📦 Installing Playwright..."
+        pip install playwright
+        echo "🌐 Installing browser dependencies..."
+        playwright install chromium
+        playwright install-deps chromium
+        
+    - name: Run keep-alive script
+      run: |
+        echo "🚀 Starting keep-alive script..."
+        python login_script.py
+        
+    - name: Log completion
+      if: always()
+      run: |
+        echo "✅ Keep-alive script completed"
+        echo "Time: $(date)"

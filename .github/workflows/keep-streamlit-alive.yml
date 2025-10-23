@@ -1,42 +1,60 @@
-name: Keep Streamlit App Alive
+name: Keep Streamlit App Alive (No Login)
 
 on:
   schedule:
-    # Run every 2 hours to keep the app active
-    # Streamlit free tier shuts down after inactivity
+    # Run every 3 hours (8 times per day)
+    # Times: 00:00, 03:00, 06:00, 09:00, 12:00, 15:00, 18:00, 21:00 UTC
     - cron: '0 */2 * * *'
-    
-  # Allow manual triggering
-  workflow_dispatch:
+  
+  workflow_dispatch:  # Allows manual trigger from GitHub UI
 
 jobs:
   keep-alive:
     runs-on: ubuntu-latest
     
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: 📥 Checkout code
+        uses: actions/checkout@v3
       
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
-        
-    - name: Install Playwright and dependencies
-      run: |
-        echo "📦 Installing Playwright..."
-        pip install playwright
-        echo "🌐 Installing browser dependencies..."
-        playwright install chromium
-        playwright install-deps chromium
-        
-    - name: Run keep-alive script
-      run: |
-        echo "🚀 Starting keep-alive script..."
-        python login_script.py
-        
-    - name: Log completion
-      if: always()
-      run: |
-        echo "✅ Keep-alive script completed"
-        echo "Time: $(date)"
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      
+      - name: 📦 Install Playwright
+        run: |
+          echo "Installing Playwright..."
+          pip install playwright
+          echo "Installing Chromium browser..."
+          playwright install chromium
+          echo "Installation complete!"
+      
+      - name: 🚀 Run keep-alive script
+        run: |
+          echo "Starting keep-alive script..."
+          python login_script.py
+          echo "Script execution completed!"
+      
+      - name: 📸 Upload screenshot (if generated)
+        if: always()  # Run even if previous step fails
+        uses: actions/upload-artifact@v3
+        with:
+          name: app-screenshot-${{ github.run_number }}
+          path: app_screenshot.png
+          if-no-files-found: ignore
+          retention-days: 7  # Keep screenshots for 7 days
+      
+      - name: ✅ Job Summary
+        if: always()
+        run: |
+          echo "## Keep-Alive Job Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Run Number**: ${{ github.run_number }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Timestamp**: $(date -u)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status**: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ -f "app_screenshot.png" ]; then
+            echo "✅ Screenshot captured successfully" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "ℹ️ No screenshot available" >> $GITHUB_STEP_SUMMARY
+          fi

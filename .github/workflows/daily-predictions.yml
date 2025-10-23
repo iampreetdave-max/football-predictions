@@ -1,13 +1,12 @@
-name: Daily Football Predictions - Enhanced
+name: Daily Football Predictions
 
 on:
   schedule:
-    # Run every day at 6:00 AM UTC
-    # Adjust the cron schedule for your timezone
-    - cron: '0 6 * * *'
-    
-  # Allow manual triggering from GitHub Actions tab
-  workflow_dispatch:
+    - cron: '0 6 * * *'  # 6 AM UTC daily
+  workflow_dispatch:  # Manual trigger
+
+permissions:
+  contents: write  # Allow workflow to push changes
 
 jobs:
   generate-predictions:
@@ -17,7 +16,8 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v3
       with:
-        token: ${{ secrets.GITHUB_TOKEN }}
+        persist-credentials: true
+        fetch-depth: 0  # Fetch full history
         
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -44,14 +44,32 @@ jobs:
         git config --local user.email "github-actions[bot]@users.noreply.github.com"
         git config --local user.name "github-actions[bot]"
         
+        # Pull latest changes to avoid conflicts
+        echo "📥 Pulling latest changes..."
+        git pull origin main --rebase || git pull origin master --rebase || echo "No remote changes"
+        
         # Add generated CSV files
         git add -f live.csv extracted_features_complete.csv best_match_predictions.csv 2>/dev/null || true
         
         # Check if there are changes to commit
         if git diff --staged --quiet; then
-          echo "No changes to commit"
+          echo "✅ No new changes to commit - predictions are up to date"
         else
           git commit -m "🤖 Auto-update predictions - $(date +'%Y-%m-%d %H:%M:%S UTC')"
-          git push
-          echo "✅ Predictions updated successfully"
+          
+          # Push with retry
+          echo "📤 Pushing changes..."
+          for i in {1..3}; do
+            if git push origin HEAD:main 2>/dev/null || git push origin HEAD:master 2>/dev/null; then
+              echo "✅ Predictions updated successfully"
+              exit 0
+            else
+              echo "⚠️ Push attempt $i/3 failed, pulling and retrying..."
+              git pull origin main --rebase 2>/dev/null || git pull origin master --rebase 2>/dev/null
+              sleep 2
+            fi
+          done
+          
+          echo "❌ Failed to push after 3 attempts"
+          exit 1
         fi

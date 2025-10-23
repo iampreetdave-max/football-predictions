@@ -1,15 +1,10 @@
-name: Daily Football Predictions - Production
+name: Daily Football Predictions - Working
 
 on:
   schedule:
-    # Run at 11:30 AM IST (6:00 AM UTC) - Best time before matches start
-    # IST = UTC + 5:30, so 6:00 AM UTC = 11:30 AM IST
     - cron: '0 6 * * *'
-    
-  # Allow manual triggering from GitHub Actions tab
   workflow_dispatch:
 
-# Prevent concurrent runs from conflicting (CRITICAL for production)
 concurrency:
   group: predictions-workflow
   cancel-in-progress: false
@@ -23,8 +18,8 @@ jobs:
       uses: actions/checkout@v3
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
-        fetch-depth: 0  # Fetch full git history
-        ref: main  # Explicitly use main branch
+        fetch-depth: 0
+        ref: main
         
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -38,61 +33,36 @@ jobs:
         pip install -r requirements.txt
         
     - name: Step 1 - Fetch Today's Matches
-      env:
-        FOOTYSTATS_API_KEY: ${{ secrets.FOOTYSTATS_API_KEY }}
-      run: |
-        echo "🔄 Fetching today's matches..."
-        python today_matches.py
-        echo "✅ Step 1 complete"
-      continue-on-error: false
+      run: python today_matches.py
         
-    - name: Step 2 - Extract Features  
-      env:
-        FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
-      run: |
-        echo "🔄 Extracting features..."
-        python fetch_data.py
-        echo "✅ Step 2 complete"
-      continue-on-error: false
+    - name: Step 2 - Extract Features
+      run: python fetch_data.py
         
     - name: Step 3 - Generate Predictions
-      run: |
-        echo "🔄 Generating predictions..."
-        python predict.py
-        echo "✅ Step 3 complete"
-      continue-on-error: false
+      run: python predict.py
         
     - name: Commit and push results
       run: |
-        # Configure git
         git config --local user.email "github-actions[bot]@users.noreply.github.com"
         git config --local user.name "github-actions[bot]"
         
-        # Show current branch
-        echo "📍 Current branch: $(git branch --show-current)"
-        
-        # Pull latest changes with rebase to avoid conflicts
+        # THE KEY FIX: Pull before pushing!
         echo "🔄 Syncing with remote..."
-        git pull --rebase origin main 2>&1 || {
-          echo "⚠️ Pull with 'main' failed, trying 'master'..."
-          git pull --rebase origin master 2>&1 || echo "ℹ️ Already up to date"
-        }
+        git pull --rebase origin main || git pull --rebase origin master || echo "Already up to date"
         
-        # Add generated CSV files (force add in case they're in .gitignore)
-        echo "📁 Adding prediction files..."
+        # Add files
         git add -f live.csv extracted_features_complete.csv best_match_predictions.csv 2>/dev/null || true
         
-        # Check if there are changes to commit
+        # Check for changes
         if git diff --staged --quiet; then
-          echo "ℹ️ No changes to commit - predictions unchanged"
+          echo "No changes to commit"
           exit 0
         fi
         
-        # Commit changes with IST timestamp
-        echo "✅ Changes detected, committing..."
-        git commit -m "🤖 Auto-update predictions - $(TZ='Asia/Kolkata' date +'%Y-%m-%d %I:%M:%S %p IST')"
+        # Commit
+        git commit -m "🤖 Auto-update predictions - $(date +'%Y-%m-%d %H:%M:%S UTC')"
         
-        # Push with retry logic (CRITICAL for production reliability)
+        # Push with retry
         max_retries=5
         retry_count=0
         
@@ -101,30 +71,26 @@ jobs:
           echo "📤 Push attempt $retry_count/$max_retries..."
           
           if git push origin main 2>&1; then
-            echo "✅ Successfully pushed predictions to GitHub!"
+            echo "✅ Success!"
             exit 0
           fi
           
-          echo "⚠️ Push failed, trying 'master' branch..."
           if git push origin master 2>&1; then
-            echo "✅ Successfully pushed predictions to GitHub!"
+            echo "✅ Success!"
             exit 0
           fi
           
           if [ $retry_count -lt $max_retries ]; then
             echo "⏳ Retrying in 10 seconds..."
             sleep 10
-            echo "🔄 Syncing with remote again..."
-            git pull --rebase origin main 2>&1 || git pull --rebase origin master 2>&1 || true
+            git pull --rebase origin main || git pull --rebase origin master || true
           fi
         done
         
-        # If we get here, all retries failed
-        echo "❌ CRITICAL: Failed to push after $max_retries attempts"
-        echo "📧 Manual intervention required - check repository status"
+        echo "❌ Failed after $max_retries attempts"
         exit 1
     
-    - name: Upload predictions as artifact (backup)
+    - name: Upload predictions as artifact
       if: always()
       uses: actions/upload-artifact@v3
       with:
@@ -134,11 +100,3 @@ jobs:
           extracted_features_complete.csv
           best_match_predictions.csv
         retention-days: 7
-        
-    - name: Notify on failure
-      if: failure()
-      run: |
-        echo "❌❌❌ PRODUCTION WORKFLOW FAILED ❌❌❌"
-        echo "Run ID: ${{ github.run_id }}"
-        echo "Workflow URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-        echo "Time: $(TZ='Asia/Kolkata' date +'%Y-%m-%d %I:%M:%S %p IST')"

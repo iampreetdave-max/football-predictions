@@ -1,0 +1,320 @@
+match_id,home_team_id,away_team_id,league_id,home_team_name,away_team_name,predicted_home_goals,predicted_away_goals,predicted_total_goals,predicted_goal_diff,predicted_outcome,outcome_label,predicted_over_2.5,predicted_over_1.5,predicted_over_3.5,predicted_btts,confidence,confidence_category
+8341548,7,17,13973,Chicago Fire,Orlando City,1.86,1.45,3.31,0.41,1,Home Win,1,1,0,1,0.41,Medium
+8282850,1417,1423,15234,Pachuca,Tigres UANL,1.15,1.38,2.53,-0.23,2,Away Win,1,1,0,1,0.23,Low
+8282931,1427,1431,15234,Querétaro,Guadalajara,0.67,1.59,2.26,-0.92,2,Away Win,0,1,0,0,0.92,High
+8341547,20,14,13973,Portland Timbers,Real Salt Lake,1.45,1.41,2.86,0.04,X,Draw,1,1,0,1,0.04,Low
+8282882,1421,1434,15234,Atlas,León,1.47,1.47,2.94,0.0,X,Draw,1,1,0,1,0.0,
+8282926,1418,1424,15234,Tijuana,Toluca,1.56,1.63,3.2,-0.07,X,Draw,1,1,0,1,0.07,Low
+8282942,1422,1449,15234,Pumas UNAM,Atlético San Luis,1.53,1.04,2.58,0.49,1,Home Win,1,1,0,1,0.49,Medium
+7992292,699766,9048,14186,Xorazm,Pakhtakor,0.94,1.95,2.89,-1.01,2,Away Win,1,1,0,1,1.01,High
+7992295,671154,671159,14186,Buxoro,Sogdiana,1.45,1.44,2.89,0.01,X,Draw,1,1,0,1,0.01,Low
+8198038,5088,5125,15741,Al Riyadh,Al Kholood,1.12,1.24,2.36,-0.12,X,Draw,0,1,0,1,0.12,Low
+8198028,5071,5074,15741,Al Feiha,Al Taawon,0.97,0.96,1.93,0.01,X,Draw,0,1,0,1,0.01,Low
+8286069,1254,1247,14291,Hegelmann Litauen,Džiugas Telšiai,1.8,0.76,2.57,1.04,1,Home Win,1,1,0,1,1.04,High
+8336779,679664,678201,16004,HJK U19,Trabzonspor U19,1.63,1.47,3.11,0.16,1,Home Win,1,1,0,1,0.16,Low
+8269785,1230,1237,14291,Sūduva,Dainava,1.73,0.93,2.66,0.8,1,Home Win,1,1,0,1,0.8,High
+8252374,100,119,15002,Salzburg,Ferencváros,1.51,0.82,2.33,0.69,1,Home Win,0,1,0,1,0.69,Medium
+8252381,366,158,15002,Go Ahead Eagles,Aston Villa,1.02,1.74,2.76,-0.72,2,Away Win,1,1,0,1,0.72,High
+8252387,57,79,15002,Olympique Lyonnais,Basel,1.96,0.92,2.88,1.04,1,Home Win,1,1,0,1,1.04,High
+8252397,336,24,15002,Brann,Rangers,1.51,1.2,2.71,0.31,1,Home Win,1,1,0,1,0.31,Medium
+8252410,172,70,15002,Sporting Braga,Red Star Belgrade,1.65,0.75,2.41,0.9,1,Home Win,0,1,0,1,0.9,High
+8252423,105,51,15002,Fenerbahçe,Stuttgart,1.25,1.54,2.79,-0.29,2,Away Win,1,1,0,1,0.29,Low
+8252451,97,467,15002,FCSB,Bologna,1.19,1.3,2.49,-0.11,X,Draw,0,1,0,1,0.11,Low
+8252468,367,960,15002,Feyenoord,Panathinaikos,1.72,1.07,2.78,0.65,1,Home Win,1,1,0,1,0.65,Medium
+8252478,533,284,15002,KRC Genk,Real Betis,1.2,1.28,2.48,-0.08,X,Draw,0,1,0,1,0.08,Low
+8252525,1101,25,14904,AEK Athens,Aberdeen,2.18,0.7,2.88,1.48,1,Home Win,1,1,0,0,1.48,High
+8252533,664,291,14904,Häcken,Rayo Vallecano,1.0,1.63,2.63,-0.63,2,Away Win,1,1,0,1,0.63,Medium
+8252537,3803,411,14904,Breidablik,KuPS,1.75,1.22,2.97,0.53,1,Home Win,1,1,0,1,0.53,Medium
+8252547,6994,3741,14904,Drita,Omonia Nicosia,1.34,1.65,2.99,-0.31,2,Away Win,1,1,0,1,0.31,Medium
+8252552,1215,86,14904,Rijeka,Sparta Praha,0.81,1.3,2.11,-0.49,2,Away Win,0,1,0,1,0.49,Medium
+8252573,5411,2061,14904,Shkendija,Shelbourne,1.25,0.97,2.22,0.28,1,Home Win,0,1,0,1,0.28,Low
+8252589,480,1224,14904,Strasbourg,Jagiellonia Białystok,1.83,0.9,2.73,0.93,1,Home Win,1,1,0,1,0.93,High
+8252602,80,112,14904,Shakhtar Donetsk,Legia Warszawa,1.78,1.12,2.9,0.66,1,Home Win,1,1,0,1,0.66,Medium
+8252610,583,471,14904,Rapid Wien,Fiorentina,1.1,1.63,2.73,-0.53,2,Away Win,1,1,0,1,0.53,Medium
+8197963,5106,5062,15741,Al Najma,Al Ahli,0.71,2.15,2.86,-1.44,2,Away Win,1,1,0,0,1.44,High
+8216698,268,264,14934,Exeter City,Plymouth Argyle,1.36,1.12,2.48,0.24,1,Home Win,0,1,0,1,0.24,Low
+8252395,113,77,15002,Roma,Viktoria Plzeň,1.92,0.75,2.68,1.17,1,Home Win,1,1,0,1,1.17,High
+8252396,42,376,15002,Freiburg,Utrecht,1.71,0.94,2.65,0.77,1,Home Win,1,1,0,1,0.77,High
+8252416,94,111,15002,Young Boys,Ludogorets,1.35,1.14,2.49,0.21,1,Home Win,0,1,0,1,0.21,Low
+8252439,23,582,15002,Celtic,Sturm Graz,1.93,0.82,2.75,1.11,1,Home Win,1,1,0,1,1.11,High
+8252442,281,445,15002,Celta de Vigo,Nice,1.48,1.11,2.6,0.37,1,Home Win,1,1,0,1,0.37,Medium
+8252483,441,106,15002,Lille,PAOK,1.59,0.96,2.56,0.63,1,Home Win,1,1,0,1,0.63,Medium
+8252487,956,955,15002,Maccabi Tel Aviv,Midtjylland,1.23,1.32,2.55,-0.09,X,Draw,1,1,0,1,0.09,Low
+8252494,656,122,15002,Malmö FF,Dinamo Zagreb,1.38,1.29,2.68,0.09,X,Draw,1,1,0,1,0.09,Low
+8252498,211,82,15002,Nottingham Forest,Porto,1.58,1.06,2.64,0.52,1,Home Win,1,1,0,1,0.52,Medium
+8252518,34,91,14904,Mainz 05,Zrinjski,2.05,0.83,2.88,1.22,1,Home Win,1,1,0,1,1.22,High
+8252531,378,982,14904,AZ,Slovan Bratislava,2.23,0.92,3.15,1.31,1,Home Win,1,1,0,1,1.31,High
+8252532,143,3735,14904,Crystal Palace,AEK Larnaca,2.29,0.82,3.11,1.47,1,Home Win,1,1,0,1,1.47,High
+8252558,2484,895,14904,Hamrun Spartans,Lausanne Sport,0.9,1.67,2.57,-0.77,2,Away Win,1,1,0,1,0.77,High
+8252580,103,961,14904,Lincoln Red Imps,Lech Poznań,0.74,2.09,2.83,-1.35,2,Away Win,1,1,0,0,1.35,High
+8252596,350,123,14904,Samsunspor,Dynamo Kyiv,1.28,1.09,2.36,0.19,1,Home Win,0,1,0,1,0.19,Low
+8252604,2056,1970,14904,Shamrock Rovers,Celje,0.94,1.45,2.39,-0.51,2,Away Win,0,1,0,1,0.51,Medium
+8252614,2431,802,14904,Sigma Olomouc,Raków Częstochowa,1.02,1.23,2.25,-0.21,2,Away Win,0,1,0,1,0.21,Low
+8252620,12956,1360,14904,CS U Craiova,Artsakh,1.1,1.04,2.14,0.06,X,Draw,0,1,0,1,0.06,Low
+7998190,7877,7039,15283,PSBS Biak Numfor,Persebaya Surabaya,0.86,1.69,2.55,-0.83,2,Away Win,1,1,0,1,0.83,High
+8266468,605,607,16036,Newcastle Jets FC,Melbourne Victory FC,1.15,1.48,2.63,-0.33,2,Away Win,1,1,0,1,0.33,Medium
+8232661,3059,3043,15377,Karvan FK,Turan,0.78,1.15,1.93,-0.37,2,Away Win,0,1,0,1,0.37,Medium
+8006749,1510,1521,15327,Balestier Khalsa,Tanjong Pagar,1.15,1.37,2.52,-0.22,2,Away Win,1,1,0,1,0.22,Low
+8281969,96,671668,15373,Alashkert,Van,1.91,1.01,2.92,0.9,1,Home Win,1,1,0,1,0.9,High
+8309429,672253,672294,14153,Wuhan Three Towns,Sichuan Jiuniu,1.52,1.23,2.75,0.29,1,Home Win,1,1,0,1,0.29,Low
+8309431,943,979059,14153,Meizhou Hakka,Yunnan Yukun,2.09,1.08,3.17,1.01,1,Home Win,1,1,0,1,1.01,High
+7998191,1541,1542,15283,Madura United,Persija,1.1,1.51,2.6,-0.41,2,Away Win,1,1,0,1,0.41,Medium
+8255737,3612,9985,15056,Montana,Arda,0.74,1.39,2.13,-0.65,2,Away Win,0,1,0,0,0.65,Medium
+8259337,1177,1174,15140,Port FC,Muang Thong United,1.65,1.16,2.81,0.49,1,Home Win,1,1,0,1,0.49,Medium
+8232686,908,3044,15377,Kapaz,Mil Mugan FK,1.08,1.16,2.25,-0.08,X,Draw,0,1,0,1,0.08,Low
+8242416,9050,9045,15566,Persepolis,Zob Ahan,1.11,1.02,2.13,0.09,X,Draw,0,1,0,1,0.09,Low
+8242431,11503,11502,15566,Aluminium Arak,Mes Rafsanjan,0.89,0.87,1.76,0.02,X,Draw,0,1,0,1,0.02,Low
+8242432,11498,9053,15566,Malavan,Esteghlal Khuzestan,1.02,1.04,2.07,-0.02,X,Draw,0,1,0,1,0.02,Low
+7992294,671151,671153,14186,Qizilqum,Dinamo Samarqand,1.11,1.14,2.25,-0.03,X,Draw,0,1,0,1,0.03,Low
+8263449,7767,7760,15248,Al Jazeera,Shabab Al Ordon,1.18,1.14,2.32,0.04,X,Draw,0,1,0,1,0.04,Low
+8242433,871492,20392,15566,Chadormalu SC,Kheybar Khorramabad,1.16,1.03,2.19,0.13,X,Draw,0,1,0,1,0.13,Low
+8205684,669561,10307,15015,Csikszereda,Petrolul 52,0.91,1.24,2.15,-0.33,2,Away Win,0,1,0,1,0.33,Medium
+8255732,3644,3599,15056,Spartak Varna,Botev Plovdiv,0.92,1.46,2.38,-0.54,2,Away Win,0,1,0,1,0.54,Medium
+8198039,5064,5065,15741,Al Fateh,Al Ittifaq,1.4,1.14,2.54,0.26,1,Home Win,1,1,0,1,0.26,Low
+8281959,884,883,15373,Banants,Shirak,2.12,0.82,2.94,1.3,1,Home Win,1,1,0,1,1.3,High
+8197964,5097,5077,15741,Neom SC,Al Khaleej,1.61,1.15,2.76,0.46,1,Home Win,1,1,0,1,0.46,Medium
+8218256,1971,1992,15063,Aluminij,Bravo,0.92,1.77,2.69,-0.85,2,Away Win,1,1,0,1,0.85,High
+8242434,11480,707725,15566,Foolad,Shams Azar Qazvin,1.04,0.61,1.65,0.43,1,Home Win,0,1,0,0,0.43,Medium
+7963421,1875,1863,15053,Gorica,Hajduk Split,0.77,1.7,2.47,-0.93,2,Away Win,0,1,0,1,0.93,High
+8218008,967,3575,15001,Sarajevo,Sloga Doboj,2.04,0.6,2.64,1.44,1,Home Win,1,1,0,0,1.44,High
+8231607,788,1149,15031,Nieciecza,Zagłębie Lubin,1.45,1.37,2.82,0.08,X,Draw,1,1,0,1,0.08,Low
+7969354,2485,2508,15089,Mosta,Zabbar St. Patrick,1.16,1.56,2.73,-0.4,2,Away Win,1,1,0,1,0.4,Medium
+8227916,544,547,14931,Greuther Fürth,Karlsruher SC,1.47,1.57,3.04,-0.1,X,Draw,1,1,0,1,0.1,Low
+8228030,35,48,14931,Schalke 04,Darmstadt 98,1.55,1.18,2.73,0.37,1,Home Win,1,1,0,1,0.37,Medium
+8263458,7783,7766,15248,Al Salt,Al Ramtha,1.18,1.3,2.49,-0.12,X,Draw,0,1,0,1,0.12,Low
+7963658,2516,986,15055,AGF,Nordsjælland,1.85,1.12,2.97,0.73,1,Home Win,1,1,0,1,0.73,High
+8205873,557,6772,14977,Wehen Wiesbaden,Alemannia Aachen,1.72,1.14,2.85,0.58,1,Home Win,1,1,0,1,0.58,Medium
+8218833,677,2911,13975,Örgryte,Västerås SK,1.71,1.41,3.12,0.3,1,Home Win,1,1,0,1,0.3,Low
+8231820,10659,193,14972,Fatih Karagümrük,Kayserispor,1.36,1.3,2.66,0.06,X,Draw,1,1,0,1,0.06,Low
+8255738,3629,3606,15056,Lokomotiv Sofia 1929,Lokomotiv Plovdiv,1.14,1.12,2.26,0.02,X,Draw,0,1,0,1,0.02,Low
+7955864,1081,1074,14974,Stade Nyonnais,Yverdon Sport,0.96,1.88,2.84,-0.92,2,Away Win,1,1,0,1,0.92,High
+7955909,900,1049,14974,Neuchâtel Xamax,Rapperswil-Jona,1.75,1.2,2.95,0.55,1,Home Win,1,1,0,1,0.55,Medium
+8205565,6644,5400,15015,Argeș,Dinamo Bucureşti,1.04,1.13,2.17,-0.09,X,Draw,0,1,0,1,0.09,Low
+8007526,373,385,14936,Heerenveen,NAC Breda,1.95,1.09,3.04,0.86,1,Home Win,1,1,0,1,0.86,High
+8198048,5070,5066,15741,Al Ittihad,Al Hilal,1.44,1.78,3.22,-0.34,2,Away Win,1,1,0,1,0.34,Medium
+8206881,436,490,14954,Guingamp,Clermont,1.66,0.92,2.59,0.74,1,Home Win,1,1,0,1,0.74,High
+8206883,1402,1390,14954,Pau,Dunkerque,1.33,1.09,2.41,0.24,1,Home Win,0,1,0,1,0.24,Low
+8206884,485,1398,14954,Red Star,Grenoble Foot 38,1.48,0.95,2.43,0.53,1,Home Win,0,1,0,1,0.53,Medium
+8206966,451,486,14954,Reims,Troyes,1.59,1.15,2.74,0.44,1,Home Win,1,1,0,1,0.44,Medium
+8207016,437,487,14954,Bastia,Laval,1.19,0.78,1.97,0.41,1,Home Win,0,1,0,1,0.41,Medium
+8207076,3906,1392,14954,Le Mans,Boulogne,1.39,0.97,2.37,0.42,1,Home Win,0,1,0,1,0.42,Medium
+7955889,897,899,14974,Aarau,Wil,1.87,1.04,2.9,0.83,1,Home Win,1,1,0,1,0.83,High
+8173258,517,459,15632,Modena,Empoli,1.65,0.88,2.53,0.77,1,Home Win,1,1,0,1,0.77,High
+8227648,37,541,14968,Werder Bremen,Union Berlin,1.64,1.13,2.77,0.51,1,Home Win,1,1,0,1,0.51,Medium
+8231561,8265,1148,15031,Motor Lublin,Widzew Łódź,1.27,1.6,2.87,-0.33,2,Away Win,1,1,0,1,0.33,Medium
+7990295,10062,69,15226,Llanelli Town,The New Saints,0.99,2.86,3.85,-1.87,2,Away Win,1,1,1,1,1.87,High
+8206396,494,440,14932,Paris,Nantes,1.79,0.85,2.63,0.94,1,Home Win,1,1,0,1,0.94,High
+8210193,529,61,14937,Sporting Charleroi,RSC Anderlecht,1.21,1.45,2.65,-0.24,2,Away Win,1,1,0,1,0.24,Low
+8238772,461,507,15068,AC Milan,Pisa,2.23,0.68,2.91,1.55,1,Home Win,1,1,0,0,1.55,High
+7969387,2486,2487,15089,Gzira United,Tarxien Rainbows,0.91,0.86,1.77,0.05,X,Draw,0,1,0,1,0.05,Low
+8202322,210,251,14930,Preston North End,Sheffield United,0.94,1.0,1.94,-0.06,X,Draw,0,1,0,1,0.06,Low
+8223748,222,153,15050,Leeds United,West Ham United,1.31,1.08,2.39,0.23,1,Home Win,0,1,0,1,0.23,Low
+8227218,10708,183,15115,Alverca,Gil Vicente,1.03,1.17,2.2,-0.14,X,Draw,0,1,0,1,0.14,Low
+8309825,2193,2187,14116,Palestino,Everton,1.42,1.07,2.48,0.35,1,Home Win,0,1,0,1,0.35,Medium
+8322624,2146,2149,14086,Alianza Petrolera,La Equidad,1.8,0.81,2.61,0.99,1,Home Win,1,1,0,1,0.99,High
+7841370,2712,2598,14305,Novorizontino,Botafogo SP,1.85,0.51,2.36,1.34,1,Home Win,0,1,0,0,1.34,High
+8231608,805,787,15031,Radomiak Radom,Wisła Płock,1.32,1.22,2.54,0.1,X,Draw,1,1,0,1,0.1,Low
+7959487,2152,2143,14086,Fortaleza CEIF,Deportivo Pasto,1.52,0.69,2.21,0.83,1,Home Win,0,1,0,0,0.83,High
+8342725,677446,677447,13973,Inter Miami,Nashville SC,2.29,1.19,3.47,1.1,1,Home Win,1,1,0,1,1.1,High
+8342725,677446,677447,13973,Inter Miami,Nashville SC,2.29,1.19,3.47,1.1,1,Home Win,1,1,0,1,1.1,High
+7841364,2592,2594,14305,Cuiabá,Remo,1.38,0.73,2.11,0.65,1,Home Win,0,1,0,0,0.65,Medium
+8282851,1444,1433,15234,Juárez,Puebla,1.61,0.98,2.58,0.63,1,Home Win,1,1,0,1,0.63,Medium
+7959488,2161,2147,14086,Deportivo Pereira,Rionegro Águilas,1.48,0.92,2.4,0.56,1,Home Win,0,1,0,1,0.56,Medium
+8322625,2141,2131,14086,América de Cali,Junior,1.3,0.91,2.21,0.39,1,Home Win,0,1,0,1,0.39,Medium
+8282949,686211,1420,15234,Mazatlán,América,0.88,1.74,2.63,-0.86,2,Away Win,1,1,0,1,0.86,High
+8266469,1281177,608,16036,Auckland,Western Sydney Wanderers,1.4,0.87,2.27,0.53,1,Home Win,0,1,0,1,0.53,Medium
+8266507,602,600,16036,Melbourne City FC,Perth Glory FC,1.89,0.62,2.51,1.27,1,Home Win,1,1,0,0,1.27,High
+8309483,847,843,14153,Tianjin Teda,Changchun Yatai,1.61,0.82,2.44,0.79,1,Home Win,0,1,0,1,0.79,High
+7998192,7908,1528,15283,Persik Kediri,PSM,1.34,1.19,2.54,0.15,1,Home Win,1,1,0,1,0.15,Low
+8266471,606,603,16036,Sydney FC,Central Coast Mariners,1.9,0.76,2.66,1.14,1,Home Win,1,1,0,1,1.14,High
+8255733,3627,3600,15056,Botev Vratsa,Septemvri Sofia,1.26,0.95,2.21,0.31,1,Home Win,0,1,0,1,0.31,Medium
+8218747,2902,676,13975,Umeå,Varberg,1.09,1.65,2.74,-0.56,2,Away Win,1,1,0,1,0.56,Medium
+8227913,566,540,14931,Holstein Kiel,Bochum,1.6,1.18,2.78,0.42,1,Home Win,1,1,0,1,0.42,Medium
+8228038,539,53,14931,Dynamo Dresden,Paderborn,1.21,1.53,2.74,-0.32,2,Away Win,1,1,0,1,0.32,Medium
+8228075,543,6326,14931,Arminia Bielefeld,Elversberg,1.58,1.47,3.05,0.11,X,Draw,1,1,0,1,0.11,Low
+8259385,9898,1180,15140,Ayutthaya United,Chonburi,1.33,1.33,2.66,0.0,X,Draw,1,1,0,1,0.0,
+8264477,8383,8136,15243,Pho Hien,Phu Dong,1.11,1.27,2.38,-0.16,2,Away Win,0,1,0,1,0.16,Low
+8264478,4000,4006,15243,Binh Duong,Ha Noi,1.08,1.31,2.39,-0.23,2,Away Win,0,1,0,1,0.23,Low
+8309420,837,839,14153,Henan Jianye,Zhejiang FC,1.87,1.33,3.2,0.54,1,Home Win,1,1,0,1,0.54,Medium
+7828623,1645,988,14165,Kuressaare,Nõmme Kalju,1.05,1.28,2.33,-0.23,2,Away Win,0,1,0,1,0.23,Low
+7828624,683758,1638,14165,Harju Jalgpallikool,Trans,1.05,1.36,2.4,-0.31,2,Away Win,0,1,0,1,0.31,Medium
+7992216,699770,18601,14186,Shortan,Neftchi,0.94,1.23,2.17,-0.29,2,Away Win,0,1,0,1,0.29,Low
+8006747,1512,1515,15327,Young Lions,Geylang International,1.14,1.37,2.51,-0.23,2,Away Win,1,1,0,1,0.23,Low
+8202303,239,155,14930,Coventry City,Watford,2.0,0.83,2.84,1.17,1,Home Win,1,1,0,1,1.17,High
+8202304,220,142,14930,Ipswich Town,West Bromwich Albion,1.61,0.94,2.54,0.67,1,Home Win,1,1,0,1,0.67,Medium
+8202305,272,141,14930,Portsmouth,Stoke City,0.99,1.17,2.16,-0.18,2,Away Win,0,1,0,1,0.18,Low
+8216685,267,221,14934,Mansfield Town,Wigan Athletic,1.37,1.2,2.57,0.17,1,Home Win,1,1,0,1,0.17,Low
+8216686,226,161,14934,Bolton Wanderers,Cardiff City,1.47,1.11,2.58,0.36,1,Home Win,1,1,0,1,0.36,Medium
+8217266,240,263,14935,Fleetwood Town,Accrington Stanley,1.52,1.11,2.63,0.41,1,Home Win,1,1,0,1,0.41,Medium
+8217551,260,236,14935,Cheltenham Town,Walsall,0.89,1.4,2.29,-0.51,2,Away Win,0,1,0,1,0.51,Medium
+8259345,1184,688585,15140,Chiangrai United,Kanchanaburi,1.26,1.23,2.49,0.03,X,Draw,0,1,0,1,0.03,Low
+7998193,1539,7887,15283,Bali United,Persita,1.55,0.92,2.47,0.63,1,Home Win,0,1,0,1,0.63,Medium
+8205865,572,6763,14977,Energie Cottbus,Havelse,2.32,1.02,3.34,1.3,1,Home Win,1,1,0,1,1.3,High
+8205866,45,6299,14977,Ingolstadt,Saarbrucken,1.58,1.3,2.87,0.28,1,Home Win,1,1,0,1,0.28,Low
+8205867,563,573,14977,Jahn Regensburg,Stuttgart II,1.49,1.31,2.8,0.18,1,Home Win,1,1,0,1,0.18,Low
+8205871,6793,6810,14977,Verl,Ulm,1.68,1.28,2.96,0.4,1,Home Win,1,1,0,1,0.4,Medium
+8205875,6791,546,14977,Waldhof Mannheim,1860 München,1.31,1.4,2.71,-0.09,X,Draw,1,1,0,1,0.09,Low
+8206850,481,1399,14954,Amiens SC,Rodez,1.07,1.14,2.21,-0.07,X,Draw,0,1,0,1,0.07,Low
+8206882,435,447,14954,Montpellier,Nancy,1.31,0.99,2.3,0.32,1,Home Win,0,1,0,1,0.32,Medium
+8232609,918,3041,15377,Araz,Sabah,1.09,1.36,2.44,-0.27,2,Away Win,0,1,0,1,0.27,Low
+8259344,7038,1188,15140,Prachuap,Nakhon Ratchasima,1.64,0.81,2.45,0.83,1,Home Win,0,1,0,1,0.83,High
+7953970,3773,3767,14963,Puskás,MTK,1.74,1.21,2.95,0.53,1,Home Win,1,1,0,1,0.53,Medium
+8255731,3603,3611,15056,Slavia Sofia,Cherno More,0.97,1.09,2.06,-0.12,X,Draw,0,1,0,1,0.12,Low
+8231562,795,1226,15031,Arka Gdynia,Piast Gliwice,1.07,1.13,2.19,-0.06,X,Draw,0,1,0,1,0.06,Low
+7990296,2116,2129,15226,Connah's Quay,Haverfordwest County,2.08,1.02,3.1,1.06,1,Home Win,1,1,0,1,1.06,High
+8173182,2312,475,15632,Südtirol,Cesena,1.25,1.2,2.45,0.05,X,Draw,0,1,0,1,0.05,Low
+8173192,514,458,15632,Virtus Entella,Pescara,1.41,0.83,2.24,0.58,1,Home Win,0,1,0,1,0.58,Medium
+8173195,2356,2354,15632,Monza,Reggiana,1.6,0.67,2.27,0.93,1,Home Win,0,1,0,0,0.93,High
+8173197,499,513,15632,Avellino,Spezia,1.13,1.14,2.27,-0.01,X,Draw,0,1,0,1,0.01,Low
+8173250,465,474,15632,Sampdoria,Frosinone,1.26,1.05,2.31,0.21,1,Home Win,0,1,0,1,0.21,Low
+8205698,6633,10306,15015,Oţelul Galaţi,Universitatea Cluj,0.99,1.2,2.19,-0.21,2,Away Win,0,1,0,1,0.21,Low
+8218255,1975,1976,15063,Radomlje,Koper,0.92,1.88,2.8,-0.96,2,Away Win,1,1,0,1,0.96,High
+8218740,2907,687,13975,Sandviken,Utsikten,1.54,1.14,2.68,0.4,1,Home Win,1,1,0,1,0.4,Medium
+8218759,2901,660,13975,Oddevold,Östersunds FK,1.6,1.12,2.72,0.48,1,Home Win,1,1,0,1,0.48,Medium
+8218826,2912,667,13975,Brage,Helsingborg,1.49,1.45,2.94,0.04,X,Draw,1,1,0,1,0.04,Low
+8218828,658,666,13975,GIF Sundsvall,Kalmar,0.79,1.82,2.61,-1.03,2,Away Win,1,1,0,1,1.03,High
+8238540,466,2330,15068,Udinese,Lecce,1.49,0.8,2.29,0.69,1,Home Win,0,1,0,1,0.69,Medium
+8238677,476,518,15068,Parma,Como,0.98,1.46,2.44,-0.48,2,Away Win,0,1,0,1,0.48,Medium
+8281967,882,792998,15373,Pyunik,Gandzasar,1.23,1.21,2.44,0.02,X,Draw,0,1,0,1,0.02,Low
+8283083,2437,2436,14973,Hradec Králové,Teplice,1.29,1.09,2.39,0.2,1,Home Win,0,1,0,1,0.2,Low
+8283084,2425,2426,14973,Dukla Praha,Slovácko,1.16,0.99,2.15,0.17,1,Home Win,0,1,0,1,0.17,Low
+8283085,2435,2424,14973,Mladá Boleslav,Karviná,1.65,1.21,2.86,0.44,1,Home Win,1,1,0,1,0.44,Medium
+8283086,2433,2449,14973,Zlín,Pardubice,1.27,1.0,2.27,0.27,1,Home Win,0,1,0,1,0.27,Low
+7990298,668313,10061,15226,Penybont,Caernarfon Town,1.81,1.35,3.16,0.46,1,Home Win,1,1,0,1,0.46,Medium
+7990299,671371,3154,15226,Briton Ferry,Colwyn Bay,1.07,1.5,2.58,-0.43,2,Away Win,1,1,0,1,0.43,Medium
+7990300,2118,2125,15226,Bala Town,Barry Town United,1.31,1.35,2.66,-0.04,X,Draw,1,1,0,1,0.04,Low
+8227651,36,43,14968,Hamburger SV,Wolfsburg,1.54,1.39,2.93,0.15,1,Home Win,1,1,0,1,0.15,Low
+8227736,44,548,14968,Eintracht Frankfurt,St. Pauli,1.58,1.23,2.81,0.35,1,Home Win,1,1,0,1,0.35,Medium
+8227739,50,46,14968,Augsburg,RB Leipzig,1.36,1.75,3.11,-0.39,2,Away Win,1,1,0,1,0.39,Medium
+8227780,39,38,14968,Borussia M'gladbach,Bayern München,1.01,2.55,3.56,-1.54,2,Away Win,1,1,1,1,1.54,High
+8227781,49,552,14968,Hoffenheim,Heidenheim,1.84,1.03,2.87,0.81,1,Home Win,1,1,0,1,0.81,High
+7963460,1859,1857,15053,Lokomotiva Zagreb,Istra 1961,1.16,1.06,2.22,0.1,X,Draw,0,1,0,1,0.1,Low
+7969388,118,959,15089,Valletta,Hibernians,1.43,1.11,2.54,0.32,1,Home Win,1,1,0,1,0.32,Medium
+7828625,1636,1644,14165,Tammeka,Tallinna Kalev,1.22,1.17,2.38,0.05,X,Draw,0,1,0,1,0.05,Low
+7992296,671158,671157,14186,Kokand-1912,Navbahor,1.29,1.33,2.62,-0.04,X,Draw,1,1,0,1,0.04,Low
+8011099,3739,3744,15366,Ethnikos Achna,Enosis,1.51,0.77,2.28,0.74,1,Home Win,0,1,0,1,0.74,High
+8042696,1133,1134,15544,Haras El Hodood,Ghazl El Mehalla,0.56,1.18,1.74,-0.62,2,Away Win,0,1,0,0,0.62,Medium
+8202309,216,146,14930,Blackburn Rovers,Southampton,1.17,1.32,2.48,-0.15,2,Away Win,0,1,0,1,0.15,Low
+8202310,207,206,14930,Bristol City,Birmingham City,1.13,1.04,2.17,0.09,X,Draw,0,1,0,1,0.09,Low
+8202327,154,159,14930,Swansea City,Norwich City,1.36,1.05,2.41,0.31,1,Home Win,0,1,0,1,0.31,Medium
+8202336,150,225,14930,Hull City,Charlton Athletic,1.39,1.12,2.51,0.27,1,Home Win,1,1,0,1,0.27,Low
+8202337,147,1837,14930,Middlesbrough,Wrexham,1.49,0.86,2.36,0.63,1,Home Win,0,1,0,1,0.63,Medium
+8202338,229,108,14930,Millwall,Leicester City,1.07,1.25,2.32,-0.18,2,Away Win,0,1,0,1,0.18,Low
+8202384,213,160,14930,Derby County,Queens Park Rangers,1.39,1.11,2.51,0.28,1,Home Win,1,1,0,1,0.28,Low
+8202385,214,243,14930,Sheffield Wednesday,Oxford United,1.07,1.24,2.3,-0.17,2,Away Win,0,1,0,1,0.17,Low
+8206170,1155,30,15000,Livingston,Motherwell,1.17,1.3,2.47,-0.13,X,Draw,0,1,0,1,0.13,Low
+8206209,1018,1019,15000,Dundee United,St. Mirren,1.39,1.19,2.59,0.2,1,Home Win,1,1,0,1,0.2,Low
+8206230,1154,28,15000,Falkirk,Dundee,1.59,0.92,2.51,0.67,1,Home Win,1,1,0,1,0.67,Medium
+8209910,124,2073,15067,Crusaders,Glentoran,0.91,1.67,2.58,-0.76,2,Away Win,1,1,0,1,0.76,High
+8209911,1208,2072,15067,Linfield,Ballymena United,1.95,0.63,2.59,1.32,1,Home Win,1,1,0,0,1.32,High
+8209940,2075,2068,15067,Dungannon Swifts,Glenavon,1.79,0.94,2.73,0.85,1,Home Win,1,1,0,1,0.85,High
+8209944,2071,976,15067,Carrick Rangers,Cliftonville,1.15,1.41,2.56,-0.26,2,Away Win,1,1,0,1,0.26,Low
+8209945,2077,2074,15067,Portadown,Coleraine,1.05,2.0,3.05,-0.95,2,Away Win,1,1,0,1,0.95,High
+8210187,534,669388,14937,KVC Westerlo,FCV Dender EH,1.81,1.04,2.85,0.77,1,Home Win,1,1,0,1,0.77,High
+8216753,250,228,14934,Peterborough United,Blackpool,1.23,1.26,2.49,-0.03,X,Draw,0,1,0,1,0.03,Low
+8216781,219,231,14934,Reading,Doncaster Rovers,1.36,1.14,2.51,0.22,1,Home Win,1,1,0,1,0.22,Low
+8216782,258,248,14934,Stevenage,Bradford City,1.36,1.23,2.58,0.13,X,Draw,1,1,0,1,0.13,Low
+8216792,215,212,14934,Barnsley,Rotherham United,1.64,1.09,2.73,0.55,1,Home Win,1,1,0,1,0.55,Medium
+8216793,255,1021,14934,Leyton Orient,Lincoln City,1.16,1.05,2.21,0.11,X,Draw,0,1,0,1,0.11,Low
+8216794,242,271,14934,Northampton Town,Luton Town,0.88,1.59,2.47,-0.71,2,Away Win,0,1,0,1,0.71,High
+8216795,247,3143,14934,Port Vale,Stockport County,1.22,1.1,2.32,0.12,X,Draw,0,1,0,1,0.12,Low
+8216796,266,217,14934,Wycombe Wanderers,Huddersfield Town,1.49,1.19,2.68,0.3,1,Home Win,1,1,0,1,0.3,Low
+8217179,241,208,14934,AFC Wimbledon,Burton Albion,1.29,1.0,2.29,0.29,1,Home Win,0,1,0,1,0.29,Low
+8217469,254,244,14935,Crawley Town,Bristol Rovers,1.4,1.19,2.58,0.21,1,Home Win,1,1,0,1,0.21,Low
+8217470,238,3141,14935,Gillingham,Salford City,1.4,1.14,2.54,0.26,1,Home Win,1,1,0,1,0.26,Low
+8217471,246,245,14935,Oldham Athletic,Shrewsbury Town,1.39,0.84,2.23,0.55,1,Home Win,0,1,0,1,0.55,Medium
+8217491,259,249,14935,Tranmere Rovers,Chesterfield,1.12,1.37,2.49,-0.25,2,Away Win,0,1,0,1,0.25,Low
+8217522,1833,269,14935,Barrow,Barnet,0.9,1.31,2.21,-0.41,2,Away Win,0,1,0,1,0.41,Medium
+8217535,1835,227,14935,Bromley,Milton Keynes Dons,1.32,1.37,2.69,-0.05,X,Draw,1,1,0,1,0.05,Low
+8217536,252,273,14935,Crewe Alexandra,Grimsby Town,1.18,1.16,2.34,0.02,X,Draw,0,1,0,1,0.02,Low
+8217537,3124,265,14935,Harrogate Town,Newport County,1.45,0.88,2.32,0.57,1,Home Win,0,1,0,1,0.57,Medium
+8217538,256,261,14935,Notts County,Cambridge United,1.36,1.26,2.62,0.1,X,Draw,1,1,0,1,0.1,Low
+8217539,234,253,14935,Swindon Town,Colchester United,1.64,1.14,2.78,0.5,1,Home Win,1,1,0,1,0.5,Medium
+8217998,3556,995,15001,Rudar Prijedor,Željezničar,0.84,1.41,2.26,-0.57,2,Away Win,0,1,0,1,0.57,Medium
+8223523,157,162,15050,Newcastle United,Fulham,1.8,0.93,2.73,0.87,1,Home Win,1,1,0,1,0.87,High
+8223536,152,156,15050,Chelsea,Sunderland,1.99,0.73,2.72,1.26,1,Home Win,1,1,0,0,1.26,High
+8231817,11088,189,14972,Kocaelispor,Alanyaspor,1.41,1.09,2.5,0.32,1,Home Win,0,1,0,1,0.32,Medium
+8242435,11489,9046,15566,Gol Gohar,Tractor Sazi,1.21,1.13,2.35,0.08,X,Draw,0,1,0,1,0.08,Low
+8263450,7763,7759,15248,Al Faisaly,Al Ahli,1.25,1.35,2.6,-0.1,X,Draw,1,1,0,1,0.1,Low
+8269818,419,407,14089,Gnistan,Ilves,1.1,2.21,3.31,-1.11,2,Away Win,1,1,0,1,1.11,High
+8272434,3805,3811,14017,ÍBV,KA,1.49,1.66,3.15,-0.17,2,Away Win,1,1,0,1,0.17,Low
+8272436,3807,9442,14017,ÍA,Afturelding,1.69,1.56,3.25,0.13,X,Draw,1,1,0,1,0.13,Low
+8272438,9440,973,14017,Vestri,KR,1.25,1.98,3.22,-0.73,2,Away Win,1,1,0,1,0.73,High
+8277551,54,3816,14017,FH,Fram,1.7,1.24,2.94,0.46,1,Home Win,1,1,0,1,0.46,Medium
+8280456,5168,1103,15163,Kifisia,Panaitolikos,1.52,0.97,2.49,0.55,1,Home Win,0,1,0,1,0.55,Medium
+8007530,387,372,14936,Fortuna Sittard,Groningen,1.24,1.17,2.41,0.07,X,Draw,0,1,0,1,0.07,Low
+8129728,4104,4098,15038,Al Ahli,Al Gharafa,1.12,1.26,2.38,-0.14,X,Draw,0,1,0,1,0.14,Low
+8129734,4096,4112,15038,Al Duhail,Al Shamal,1.01,1.45,2.45,-0.44,2,Away Win,0,1,0,1,0.44,Medium
+8206112,6302,562,14977,Schweinfurt,Osnabrück,0.89,1.81,2.7,-0.92,2,Away Win,1,1,0,1,0.92,High
+8232617,910,912,15377,Zira,Sumqayıt,1.65,0.75,2.39,0.9,1,Home Win,0,1,0,1,0.9,High
+8197965,5068,5111,15741,Al Quadisiya,Al Akhdoud,2.08,0.67,2.75,1.41,1,Home Win,1,1,0,0,1.41,High
+8197870,5067,5083,15741,Al Shabab,Dhamk,1.88,0.9,2.78,0.98,1,Home Win,1,1,0,1,0.98,High
+7953815,3771,3772,14963,Diósgyőr,Paksi SE,1.26,1.58,2.84,-0.32,2,Away Win,1,1,0,1,0.32,Medium
+8206393,491,68,14932,Brest,PSG,1.06,2.02,3.08,-0.96,2,Away Win,1,1,0,1,0.96,High
+8206714,595,3410,14923,LASK Linz,Grazer AK,1.69,0.92,2.61,0.77,1,Home Win,1,1,0,1,0.77,High
+8206746,591,593,14923,Wattens,Blau-Weiß Linz,1.11,1.22,2.33,-0.11,X,Draw,0,1,0,1,0.11,Low
+8206759,577,599,14923,Rheindorf Altach,Hartberg,1.36,0.93,2.29,0.43,1,Home Win,0,1,0,1,0.43,Medium
+8255720,3605,3640,15056,Levski Sofia,Dobrudzha 1919,2.31,0.5,2.81,1.81,1,Home Win,1,1,0,0,1.81,High
+8281958,1362,671669,15373,FC Avan Academy,BKMA,1.26,1.11,2.37,0.15,X,Draw,0,1,0,1,0.15,Low
+8334478,2529,2547,15434,Ittihad Tanger,Maghreb Fès,1.15,1.06,2.21,0.09,X,Draw,0,1,0,1,0.09,Low
+8173190,2358,1047,15632,Carrarese,Venezia,1.1,1.29,2.39,-0.19,2,Away Win,0,1,0,1,0.19,Low
+8218192,969,16056,15063,Maribor,NK Primorje,2.27,0.87,3.14,1.4,1,Home Win,1,1,0,1,1.4,High
+8231609,1225,1223,15031,Pogoń Szczecin,Cracovia Kraków,1.51,1.27,2.79,0.24,1,Home Win,1,1,0,1,0.24,Low
+7955908,1146,1080,14974,Bellinzona,Stade Lausanne-Ouchy,0.96,1.7,2.65,-0.74,2,Away Win,1,1,0,1,0.74,High
+7962718,889,888,15047,Sion,Thun,1.47,1.28,2.75,0.19,1,Home Win,1,1,0,1,0.19,Low
+7962719,891,892,15047,St. Gallen,Grasshopper,1.8,1.08,2.88,0.72,1,Home Win,1,1,0,1,0.72,High
+7963431,1881,1861,15053,Varaždin,Slaven Koprivnica,1.47,0.79,2.26,0.68,1,Home Win,0,1,0,1,0.68,Medium
+8011102,3760,3736,15366,Olympiakos,Apollon,0.61,1.6,2.21,-0.99,2,Away Win,0,1,0,0,0.99,High
+8238681,74,470,15068,Napoli,Inter Milan,1.17,1.23,2.4,-0.06,X,Draw,0,1,0,1,0.06,Low
+8283200,2428,2430,14973,Slovan Liberec,Jablonec,1.24,1.09,2.33,0.15,X,Draw,0,1,0,1,0.15,Low
+7990297,2121,671374,15226,Cardiff MU,Flint Town United,1.68,1.29,2.96,0.39,1,Home Win,1,1,0,1,0.39,Medium
+8210279,537,690,14937,KV Mechelen,OH Leuven,1.39,1.19,2.58,0.2,1,Home Win,1,1,0,1,0.2,Low
+8129721,4103,4097,15038,Al Sadd,Al Arabi,2.21,1.23,3.44,0.98,1,Home Win,1,1,0,1,0.98,High
+8209942,2079,2092,15067,Larne,Bangor,1.87,0.68,2.54,1.19,1,Home Win,1,1,0,0,1.19,High
+8223527,149,209,15050,Manchester United,Brighton & Hove Albion,1.71,1.2,2.91,0.51,1,Home Win,1,1,0,1,0.51,Medium
+8227650,33,41,14968,Borussia Dortmund,Köln,2.05,1.0,3.05,1.05,1,Home Win,1,1,0,1,1.05,High
+8280460,5138,1106,15163,Panserraikos,Larissa,1.22,0.89,2.11,0.33,1,Home Win,0,1,0,1,0.33,Medium
+8319919,7761,7785,15248,Al Hussein,Sama Al Sarhan,1.31,1.23,2.54,0.08,X,Draw,1,1,0,1,0.08,Low
+8319997,7761,688789,15248,Al Hussein,Moghayer Al Sarhan,1.45,1.17,2.62,0.28,1,Home Win,1,1,0,1,0.28,Low
+8007511,371,389,14936,Sparta Rotterdam,Telstar,1.82,1.17,2.99,0.65,1,Home Win,1,1,0,1,0.65,Medium
+7969382,2493,991,15089,Floriana,Birkirkara,1.41,1.05,2.46,0.36,1,Home Win,0,1,0,1,0.36,Medium
+8042697,688348,1127,15544,Coca-Cola,Al Mokawloon,1.18,0.85,2.03,0.33,1,Home Win,0,1,0,1,0.33,Medium
+8206391,56,439,14932,Monaco,Toulouse,1.81,1.03,2.84,0.78,1,Home Win,1,1,0,1,0.78,High
+8227382,1028,998595,15115,Santa Clara,AVS,1.65,0.67,2.32,0.98,1,Home Win,0,1,0,0,0.98,High
+8231818,185,10639,14972,Trabzonspor,Eyüpspor,1.79,0.89,2.68,0.9,1,Home Win,1,1,0,1,0.9,High
+8280552,5130,1109,15163,OFI,Atromitos,1.23,1.06,2.29,0.17,1,Home Win,0,1,0,1,0.17,Low
+8334483,2536,2555,15434,Raja Casablanca,Olympique Dcheïra,1.04,1.09,2.13,-0.05,X,Draw,0,1,0,1,0.05,Low
+7953813,3780,3794,14963,Nyíregyháza Spartacus,Kazincbarcika,1.62,1.06,2.68,0.56,1,Home Win,1,1,0,1,0.56,Medium
+8173196,2350,462,15632,Catanzaro,Palermo,1.05,1.36,2.41,-0.31,2,Away Win,0,1,0,1,0.31,Medium
+8007527,398,370,14936,Volendam,Heracles,1.46,1.32,2.78,0.14,X,Draw,1,1,0,1,0.14,Low
+8198040,5089,5069,15741,Al Hazm,Al Nassr,0.87,2.4,3.27,-1.53,2,Away Win,1,1,0,1,1.53,High
+8205569,6622,10305,15015,CFR Cluj,SSC Farul,1.71,1.1,2.82,0.61,1,Home Win,1,1,0,1,0.61,Medium
+8206987,3897,434,14954,Annecy,Saint-Étienne,0.82,1.49,2.31,-0.67,2,Away Win,0,1,0,1,0.67,Medium
+8309660,2209,2186,14116,La Serena,Audax Italiano,1.32,1.34,2.66,-0.02,X,Draw,1,1,0,1,0.02,Low
+8231560,782,1221,15031,GKS Katowice,Korona Kielce,1.31,1.32,2.63,-0.01,X,Draw,1,1,0,1,0.01,Low
+8125647,903,890,15047,Winterthur,Luzern,1.18,1.55,2.73,-0.37,2,Away Win,1,1,0,1,0.37,Medium
+8227852,47,545,14931,Hertha BSC,Fortuna Düsseldorf,1.58,1.08,2.67,0.5,1,Home Win,1,1,0,1,0.5,Medium
+8210192,525,527,14937,KAA Gent,Standard Liège,1.46,0.86,2.32,0.6,1,Home Win,0,1,0,1,0.6,Medium
+8217952,3552,3543,15001,Velež,Široki Brijeg,1.67,0.85,2.52,0.82,1,Home Win,1,1,0,1,0.82,High
+8238538,1046,464,15068,Cremonese,Atalanta,0.86,1.64,2.5,-0.78,2,Away Win,0,1,0,1,0.78,High
+7834606,620,642,14231,Atlético Mineiro,Ceará,1.43,0.69,2.12,0.74,1,Home Win,0,1,0,0,0.74,High
+7834608,610,624,14231,Vitória,Corinthians,1.15,1.1,2.24,0.05,X,Draw,0,1,0,1,0.05,Low
+7841369,677199,633,14305,Athletic Club,América Mineiro,1.2,0.99,2.19,0.21,1,Home Win,0,1,0,1,0.21,Low
+7841371,2588,627,14305,Volta Redonda,Coritiba,0.98,1.09,2.06,-0.11,X,Draw,0,1,0,1,0.11,Low
+7959489,2145,2151,14086,Envigado,Boyacá Chicó,1.42,0.86,2.28,0.56,1,Home Win,0,1,0,1,0.56,Medium
+8007532,380,379,14936,PEC Zwolle,NEC,1.19,1.74,2.93,-0.55,2,Away Win,1,1,0,1,0.55,Medium
+8223746,218,151,15050,Brentford,Liverpool,1.08,1.93,3.01,-0.85,2,Away Win,1,1,0,1,0.85,High
+8206389,449,443,14932,Lens,Olympique Marseille,1.3,1.44,2.74,-0.14,X,Draw,1,1,0,1,0.14,Low
+8227212,15804,171,15115,Estrela Amadora,Rio Ave FC,1.07,1.1,2.16,-0.03,X,Draw,0,1,0,1,0.03,Low
+8227379,78,167,15115,Benfica,FC Arouca,2.42,0.63,3.05,1.79,1,Home Win,1,1,0,0,1.79,High
+7959479,2140,2132,14086,Deportes Tolima,Deportivo Cali,1.49,0.83,2.32,0.66,1,Home Win,0,1,0,1,0.66,Medium
+7834601,617,630,14231,Fluminense,Internacional,1.53,0.82,2.34,0.71,1,Home Win,0,1,0,1,0.71,High
+8309664,2195,2192,14116,Huachipato,Deportes Iquique,1.64,1.16,2.8,0.48,1,Home Win,1,1,0,1,0.48,Medium
+7959478,2146,2149,14086,Alianza Petrolera,La Equidad,1.25,1.2,2.45,0.05,X,Draw,0,1,0,1,0.05,Low
+7959490,2139,2159,14086,Atlético Bucaramanga,Llaneros,1.86,0.61,2.47,1.25,1,Home Win,0,1,0,0,1.25,High
+7834610,614,2721,14231,Sport Recife,Mirassol,1.2,1.39,2.59,-0.19,2,Away Win,1,1,0,1,0.19,Low
+7841365,650,621,14305,Paysandu,Avaí,1.07,1.19,2.26,-0.12,X,Draw,0,1,0,1,0.12,Low
+7834609,2601,612,14231,Fortaleza,Flamengo,0.8,1.54,2.33,-0.74,2,Away Win,0,1,0,1,0.74,High
+8282945,1423,1418,15234,Tigres UANL,Tijuana,2.07,1.05,3.12,1.02,1,Home Win,1,1,0,1,1.02,High
+8337999,2133,2136,14086,Santa Fe,Millonarios,1.41,1.15,2.56,0.26,1,Home Win,1,1,0,1,0.26,Low
+7841367,691,1056,14305,Criciúma,Goiás,1.24,1.07,2.31,0.17,1,Home Win,0,1,0,1,0.17,Low

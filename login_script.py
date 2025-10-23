@@ -9,7 +9,7 @@ def log_message(message):
 
 def keep_alive():
     # YOUR APP URL - CHANGE THIS!
-    APP_URL = "https://your-app-name.streamlit.app"  # ← PUT YOUR URL HERE!
+    APP_URL = "https://football-predictions-agility.streamlit.app/"  # ← PUT YOUR URL HERE!
     
     with sync_playwright() as p:
         try:

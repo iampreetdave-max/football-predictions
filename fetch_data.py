@@ -52,7 +52,7 @@ print("=" * 80)
 if len(df) > 0:
     sample = df.iloc[0]
     print("Sample values from first row:")
-    for col in ['o25_potential', 'o15_potential', 'odds_ft_1_prob', 'odds_ft_2_prob', 'btts_potential']:
+    for col in ['date', 'o25_potential', 'o15_potential', 'odds_ft_1_prob', 'odds_ft_2_prob', 'btts_potential']:
         if col in df.columns:
             val = sample.get(col, 'N/A')
             print(f"  {col}: {val}")
@@ -144,6 +144,14 @@ for idx, row in df.iterrows():
     away_id = row['awayID']
     league_id = row['league_id']
     
+    # Extract date (only date part, not time) - NEW!
+    try:
+        # Parse the date column and extract only the date part (YYYY-MM-DD)
+        match_date = pd.to_datetime(row['date']).date()
+    except:
+        # Fallback to today's date if parsing fails
+        match_date = pd.to_datetime('today').date()
+    
     # Skip if we don't have data for both teams
     if home_id not in team_data_cache or away_id not in team_data_cache:
         print(f"⚠ Match {match_id}: Missing team data (home: {home_id}, away: {away_id})")
@@ -189,8 +197,9 @@ for idx, row in df.iterrows():
         
         # Extract features
         features = {
-            # IDs
+            # IDs and Date
             'match_id': match_id,
+            'date': match_date,  # NEW: Date column added here!
             'home_team_id': home_id,
             'away_team_id': away_id,
             'league_id': league_id,
@@ -283,9 +292,10 @@ print("=" * 80)
 if all_features:
     features_df = pd.DataFrame(all_features)
     
-    # Reorder columns to match best_version.py requirements
+    # Reorder columns to include date - UPDATED!
     column_order = [
-        'match_id', 'home_team_id', 'away_team_id', 'league_id',
+        'match_id', 'date',  # Date added here!
+        'home_team_id', 'away_team_id', 'league_id',
         'home_team_name', 'away_team_name',
         'CTMCL', 'avg_goals_market',
         'team_a_xg_prematch', 'team_b_xg_prematch',
@@ -341,11 +351,18 @@ if all_features:
     print(f"\nFirst match preview:")
     first_match = features_df.iloc[0]
     print(f"  Match ID: {first_match['match_id']}")
+    print(f"  Date: {first_match['date']}")  # NEW: Show date
     print(f"  {first_match['home_team_name']} (xG: {first_match['team_a_xg_prematch']:.2f}) vs {first_match['away_team_name']} (xG: {first_match['team_b_xg_prematch']:.2f})")
     print(f"  CTMCL: {first_match['CTMCL']:.2f}")
     print(f"  Home form: {first_match['home_form_points']:.2f} | Away form: {first_match['away_form_points']:.2f}")
     print(f"  o25_potential: {first_match['o25_potential']:.2f} | btts_potential: {first_match['btts_potential']:.2f}")
     print(f"  odds_ft_1_prob: {first_match['odds_ft_1_prob']:.3f} | odds_ft_2_prob: {first_match['odds_ft_2_prob']:.3f}")
+    
+    # Show date distribution - NEW!
+    print(f"\nDate distribution:")
+    date_counts = features_df['date'].value_counts().sort_index()
+    for date, count in date_counts.items():
+        print(f"  {date}: {count} matches")
     
 else:
     print("⚠ No features extracted. Check API responses and data availability.")
@@ -354,4 +371,5 @@ print("\n" + "=" * 80)
 print("COMPLETED!")
 print("=" * 80)
 print(f"✓ Output file: extracted_features_complete.csv")
-print(f"✓ Ready for use with best_version.py")
+print(f"✓ Ready for use with predict.py")
+print(f"✓ Date column included: Extracted from live.csv (date only, no time)")

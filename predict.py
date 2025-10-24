@@ -189,6 +189,7 @@ print("\n[6/6] Creating results dataframe...")
 results = pd.DataFrame({
     # Match identifiers
     'match_id': df['match_id'],
+    'date': df['date'] if 'date' in df.columns else None,  # NEW: Date column added!
     'home_team_id': df['home_team_id'],
     'away_team_id': df['away_team_id'],
     'league_id': df['league_id'],

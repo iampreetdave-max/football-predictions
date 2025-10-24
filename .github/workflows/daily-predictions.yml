@@ -1,4 +1,4 @@
-name: Daily Football Predictions - Simple Working
+name: Daily Football Predictions
 
 on:
   schedule:

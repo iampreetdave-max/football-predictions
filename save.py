@@ -70,26 +70,25 @@ db_data['date'] = df['date']
 db_data['league'] = df['league_id'].astype(str)
 db_data['home_team'] = df['home_team_name']
 db_data['away_team'] = df['away_team_name']
-db_data['home_odds'] = df['odds_ft_1_prob'].apply(probability_to_odds)
-db_data['away_odds'] = df['odds_ft_2_prob'].apply(probability_to_odds)
-db_data['draw_odds'] = df.apply(
-    lambda row: calculate_draw_odds(row['odds_ft_1_prob'], row['odds_ft_2_prob']), axis=1
-)
-db_data['over_2_5_odds'] = df['o25_potential'].apply(potential_to_odds)
-db_data['under_2_5_odds'] = df['u25_potential'].apply(potential_to_odds)
+db_data['home_odds'] = df['odds_ft_1']
+db_data['away_odds'] = df['odds_ft_2']
+db_data['draw_odds'] = df['odds_ft_x']
+    
+db_data['over_2_5_odds'] = df['odds_ft_over25']
+db_data['under_2_5_odds'] = df['odds_ft_under25']
 db_data['ctmcl'] = df['CTMCL']
 db_data['predicted_home_goals'] = df['predicted_home_goals']
 db_data['predicted_away_goals'] = df['predicted_away_goals']
-db_data['confidence'] = df['confidence']
+db_data['confidence'] = df['confidence_category']
 db_data['delta'] = df['predicted_goal_diff']
 db_data['predicted_over_under'] = df['ctmcl_prediction']
 db_data['actual_over_under'] = None
 db_data['predicted_winner'] = df['outcome_label']
 db_data['actual_winner'] = None
 db_data['status'] = df['status']
-db_data['profit_loss_over_under'] = df['over_profit']
-db_data['profit_loss_moneyline'] = df['moneyline_profit']
-db_data['data_source'] = 'soccer_predictions'
+db_data['profit_loss_over_under'] = None
+db_data['profit_loss_moneyline'] = None
+db_data['data_source'] = 'FootyStats_API'
 
 print(f"✓ Transformed {len(db_data)} records")
 

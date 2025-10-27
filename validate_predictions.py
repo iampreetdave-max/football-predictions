@@ -1,6 +1,6 @@
 """
 SIMPLIFIED MATCH VALIDATION SYSTEM
-Updates ONLY: actual_winner, actual_over_under, status in database
+Updates: actual_winner, actual_over_under, status, profit_loss_over_under, profit_loss_moneyline
 """
 
 import pandas as pd
@@ -57,13 +57,21 @@ try:
     predictions_df = pd.read_csv(predictions_csv_path)
     print(f"✓ Loaded {len(predictions_df)} predictions")
     
-    # Verify CTMCL column exists
-    if 'CTMCL' not in predictions_df.columns:
-        print("✗ Error: CTMCL column not found!")
+    # Verify required columns exist
+    required_columns = [
+        'CTMCL', 'ctmcl_prediction', 'outcome_label',
+        'odds_ft_over25', 'odds_ft_under25', 
+        'odds_ft_1', 'odds_ft_x', 'odds_ft_2'
+    ]
+    
+    missing_columns = [col for col in required_columns if col not in predictions_df.columns]
+    if missing_columns:
+        print(f"✗ Error: Missing required columns: {missing_columns}")
         cursor.close()
         conn.close()
         exit(1)
-    print(f"✓ CTMCL column found")
+    
+    print(f"✓ All required columns found")
     
 except Exception as e:
     print(f"✗ Error loading predictions: {e}")
@@ -98,6 +106,17 @@ for idx, row in predictions_to_validate.iterrows():
     match_id = row['match_id']
     ctmcl = row['CTMCL']
     
+    # Get prediction data
+    predicted_ou = row['ctmcl_prediction']  # "Over 2.5" or "Under 2.5"
+    predicted_winner = row['outcome_label']  # "Home Win", "Away Win", or "Draw"
+    
+    # Get odds data
+    odds_over = row['odds_ft_over25']
+    odds_under = row['odds_ft_under25']
+    odds_home = row['odds_ft_1']
+    odds_away = row['odds_ft_2']
+    odds_draw = row['odds_ft_x']
+    
     try:
         # Fetch match details from API
         url = f"{API_MATCH_URL}?key={API_KEY}&match_id={match_id}"
@@ -124,19 +143,57 @@ for idx, row in predictions_to_validate.iterrows():
                     else:
                         actual_winner = 'Draw'
                     
-                    # Determine actual over/under based on CTMCL
-                    if total_goals > ctmcl:
+                    # Determine actual over/under based on 2.5 (not CTMCL)
+                    if total_goals > 2.5:
                         actual_over_under = 'over'
                     else:
                         actual_over_under = 'under'
                     
-                    # Update database - ONLY these 3 fields
+                    # ========== CALCULATE PROFIT/LOSS FOR OVER/UNDER ==========
+                    if 'Over' in predicted_ou:
+                        # We bet on over 2.5
+                        if actual_over_under == 'over':
+                            profit_loss_ou = round(odds_over - 1, 2)
+                        else:
+                            profit_loss_ou = -1.0
+                    else:
+                        # We bet on under 2.5
+                        if actual_over_under == 'under':
+                            profit_loss_ou = round(odds_under - 1, 2)
+                        else:
+                            profit_loss_ou = -1.0
+                    
+                    # ========== CALCULATE PROFIT/LOSS FOR MONEYLINE ==========
+                    if predicted_winner == 'Home Win':
+                        # We bet on home win
+                        if actual_winner == row['home_team_name']:
+                            profit_loss_ml = round(odds_home - 1, 2)
+                        else:
+                            profit_loss_ml = -1.0
+                    elif predicted_winner == 'Away Win':
+                        # We bet on away win
+                        if actual_winner == row['away_team_name']:
+                            profit_loss_ml = round(odds_away - 1, 2)
+                        else:
+                            profit_loss_ml = -1.0
+                    elif predicted_winner == 'Draw':
+                        # We bet on draw
+                        if actual_winner == 'Draw':
+                            profit_loss_ml = round(odds_draw - 1, 2)
+                        else:
+                            profit_loss_ml = -1.0
+                    else:
+                        profit_loss_ml = 0.0
+                    
+                    # Update database - 5 fields
                     update_query = f"""
                     UPDATE {TABLE_NAME}
                     SET 
                         actual_winner = %s,
                         actual_over_under = %s,
-                        status = %s
+                        status = %s,
+                        profit_loss_over_under = %s,
+                        profit_loss_moneyline = %s
                     WHERE match_id = %s
                     """
                     
@@ -144,12 +201,15 @@ for idx, row in predictions_to_validate.iterrows():
                         actual_winner,
                         actual_over_under,
                         'true',
+                        profit_loss_ou,
+                        profit_loss_ml,
                         match_id
                     ))
                     
                     successful_updates += 1
                     print(f"✓ {match_id}: {row['home_team_name']} {home_score}-{away_score} {row['away_team_name']}")
-                    print(f"  → Winner: {actual_winner} | O/U: {actual_over_under} (CTMCL: {ctmcl:.2f})")
+                    print(f"  → Winner: {actual_winner} | O/U: {actual_over_under} (2.5)")
+                    print(f"  → P/L O/U: ${profit_loss_ou:.2f} | P/L Moneyline: ${profit_loss_ml:.2f}")
                     
                 else:
                     print(f"⏳ {match_id}: Match not complete (status: {status})")
@@ -183,8 +243,10 @@ print(f"✓ Successfully updated: {successful_updates} matches")
 print(f"✗ Failed/Incomplete: {failed_fetches} matches")
 print(f"\n📊 Updated fields per match:")
 print(f"  • actual_winner")
-print(f"  • actual_over_under (based on CTMCL)")
+print(f"  • actual_over_under (based on 2.5, not CTMCL)")
 print(f"  • status = 'true'")
+print(f"  • profit_loss_over_under (based on odds_ft_over25/under25)")
+print(f"  • profit_loss_moneyline (based on odds_ft_1/x/2)")
 
 # Close connection
 cursor.close()

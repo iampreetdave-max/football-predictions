@@ -39,99 +39,122 @@ def read_csv():
         print(f"✗ Error reading CSV: {e}")
         sys.exit(1)
 
-def prepare_data(df):
-    """Map CSV columns to database columns"""
-    data_list = []
-    
-    for _, row in df.iterrows():
-        data = {
-            'match_id': row.get('match id'),
-            'date': row.get('date'),
-            'league': row.get('league id'),
-            'home_team': row.get('home team name'),
-            'away_team': row.get('away team name'),
-            'home_odds': row.get('odds_ft_1'),
-            'away_odds': row.get('odds_ft_2'),
-            'draw_odds': row.get('odds_ft_x'),
-            'over_2_5_odds': row.get('odds_ft_over25'),
-            'under_2_5_odds': row.get('odds_ft_under25'),
-            'ctmcl': row.get('CTMCL'),
-            'predicted_home_goals': row.get('predicted_home_goals'),
-            'predicted_away_goals': row.get('predicted_away_goals'),
-            'confidence': row.get('confidence'),
-            'delta': row.get('predicted_goal_diff'),
-            'predicted_over_under': row.get('ctmcl_prediction'),
-            'actual_over_under': None,
-            'predicted_winner': row.get('outcome_label'),
-            'actual_winner': None,
-            'status': 'pending',
-            'profit_loss_over_under': None,
-            'profit_loss_moneyline': None,
-            'data_source': 'footystats_API',
-            'created_date': datetime.now()
-        }
-        data_list.append(data)
-    
-    return data_list
+def check_match_exists(cursor, match_id):
+    """Check if match_id already exists in database"""
+    cursor.execute(f"SELECT match_id FROM {TABLE_NAME} WHERE match_id = %s", (match_id,))
+    return cursor.fetchone() is not None
 
-def upsert_data(conn, data_list):
-    """Insert or update data in database"""
-    cursor = conn.cursor()
-    
-    upsert_query = f"""
+def insert_record(cursor, data):
+    """Insert new record"""
+    insert_query = f"""
     INSERT INTO {TABLE_NAME} (
         match_id, date, league, home_team, away_team, 
         home_odds, away_odds, draw_odds, over_2_5_odds, under_2_5_odds,
         ctmcl, predicted_home_goals, predicted_away_goals, confidence, delta,
         predicted_over_under, actual_over_under, predicted_winner, actual_winner,
         status, profit_loss_over_under, profit_loss_moneyline, data_source, created_date
-    ) VALUES %s
-    ON CONFLICT (match_id) 
-    DO UPDATE SET
-        date = EXCLUDED.date,
-        league = EXCLUDED.league,
-        home_team = EXCLUDED.home_team,
-        away_team = EXCLUDED.away_team,
-        home_odds = EXCLUDED.home_odds,
-        away_odds = EXCLUDED.away_odds,
-        draw_odds = EXCLUDED.draw_odds,
-        over_2_5_odds = EXCLUDED.over_2_5_odds,
-        under_2_5_odds = EXCLUDED.under_2_5_odds,
-        ctmcl = EXCLUDED.ctmcl,
-        predicted_home_goals = EXCLUDED.predicted_home_goals,
-        predicted_away_goals = EXCLUDED.predicted_away_goals,
-        confidence = EXCLUDED.confidence,
-        delta = EXCLUDED.delta,
-        predicted_over_under = EXCLUDED.predicted_over_under,
-        predicted_winner = EXCLUDED.predicted_winner,
-        status = EXCLUDED.status,
-        data_source = EXCLUDED.data_source,
-        created_date = EXCLUDED.created_date
+    ) VALUES (
+        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+    )
     """
     
-    # Prepare values as tuples
-    values = [
-        (
-            d['match_id'], d['date'], d['league'], d['home_team'], d['away_team'],
-            d['home_odds'], d['away_odds'], d['draw_odds'], d['over_2_5_odds'], d['under_2_5_odds'],
-            d['ctmcl'], d['predicted_home_goals'], d['predicted_away_goals'], d['confidence'], d['delta'],
-            d['predicted_over_under'], d['actual_over_under'], d['predicted_winner'], d['actual_winner'],
-            d['status'], d['profit_loss_over_under'], d['profit_loss_moneyline'], d['data_source'], d['created_date']
-        )
-        for d in data_list
-    ]
+    cursor.execute(insert_query, (
+        data['match_id'], data['date'], data['league'], data['home_team'], data['away_team'],
+        data['home_odds'], data['away_odds'], data['draw_odds'], data['over_2_5_odds'], data['under_2_5_odds'],
+        data['ctmcl'], data['predicted_home_goals'], data['predicted_away_goals'], data['confidence'], data['delta'],
+        data['predicted_over_under'], data['actual_over_under'], data['predicted_winner'], data['actual_winner'],
+        data['status'], data['profit_loss_over_under'], data['profit_loss_moneyline'], data['data_source'], data['created_date']
+    ))
+
+def update_record(cursor, data):
+    """Update existing record"""
+    update_query = f"""
+    UPDATE {TABLE_NAME} SET
+        date = %s,
+        league = %s,
+        home_team = %s,
+        away_team = %s,
+        home_odds = %s,
+        away_odds = %s,
+        draw_odds = %s,
+        over_2_5_odds = %s,
+        under_2_5_odds = %s,
+        ctmcl = %s,
+        predicted_home_goals = %s,
+        predicted_away_goals = %s,
+        confidence = %s,
+        delta = %s,
+        predicted_over_under = %s,
+        predicted_winner = %s,
+        status = %s,
+        data_source = %s,
+        created_date = %s
+    WHERE match_id = %s
+    """
     
-    try:
-        execute_values(cursor, upsert_query, values)
-        conn.commit()
-        print(f"✓ Successfully inserted/updated {len(data_list)} records")
-        return True
-    except Exception as e:
-        conn.rollback()
-        print(f"✗ Error during upsert: {e}")
-        return False
-    finally:
-        cursor.close()
+    cursor.execute(update_query, (
+        data['date'], data['league'], data['home_team'], data['away_team'],
+        data['home_odds'], data['away_odds'], data['draw_odds'], data['over_2_5_odds'], data['under_2_5_odds'],
+        data['ctmcl'], data['predicted_home_goals'], data['predicted_away_goals'], data['confidence'], data['delta'],
+        data['predicted_over_under'], data['predicted_winner'], data['status'], data['data_source'], data['created_date'],
+        data['match_id']
+    ))
+
+def process_data(conn, df):
+    """Process and insert/update data"""
+    cursor = conn.cursor()
+    inserted = 0
+    updated = 0
+    errors = 0
+    
+    for idx, row in df.iterrows():
+        try:
+            data = {
+                'match_id': row.get('match id'),
+                'date': row.get('date'),
+                'league': row.get('league id'),
+                'home_team': row.get('home team name'),
+                'away_team': row.get('away team name'),
+                'home_odds': row.get('odds_ft_1'),
+                'away_odds': row.get('odds_ft_2'),
+                'draw_odds': row.get('odds_ft_x'),
+                'over_2_5_odds': row.get('odds_ft_over25'),
+                'under_2_5_odds': row.get('odds_ft_under25'),
+                'ctmcl': row.get('CTMCL'),
+                'predicted_home_goals': row.get('predicted_home_goals'),
+                'predicted_away_goals': row.get('predicted_away_goals'),
+                'confidence': row.get('confidence'),
+                'delta': row.get('predicted_goal_diff'),
+                'predicted_over_under': row.get('ctmcl_prediction'),
+                'actual_over_under': None,
+                'predicted_winner': row.get('outcome_label'),
+                'actual_winner': None,
+                'status': 'pending',
+                'profit_loss_over_under': None,
+                'profit_loss_moneyline': None,
+                'data_source': 'footystats_API',
+                'created_date': datetime.now()
+            }
+            
+            # Check if match_id exists
+            if check_match_exists(cursor, data['match_id']):
+                update_record(cursor, data)
+                updated += 1
+                print(f"  Updated: match_id={data['match_id']}")
+            else:
+                insert_record(cursor, data)
+                inserted += 1
+                print(f"  Inserted: match_id={data['match_id']}")
+                
+        except Exception as e:
+            errors += 1
+            print(f"  ✗ Error processing row {idx}: {e}")
+            continue
+    
+    conn.commit()
+    cursor.close()
+    
+    return inserted, updated, errors
 
 def main():
     """Main execution function"""
@@ -146,22 +169,23 @@ def main():
     conn = connect_db()
     
     try:
-        # Prepare data
-        data_list = prepare_data(df)
-        print(f"✓ Data prepared: {len(data_list)} records")
+        # Process data
+        print(f"\nProcessing {len(df)} records...")
+        inserted, updated, errors = process_data(conn, df)
         
-        # Upsert data
-        success = upsert_data(conn, data_list)
-        
-        if success:
-            print("=" * 50)
-            print("✓ Upload completed successfully!")
-            print("=" * 50)
-        else:
-            print("=" * 50)
-            print("✗ Upload failed!")
-            print("=" * 50)
+        print("\n" + "=" * 50)
+        print("Summary:")
+        print(f"  ✓ Inserted: {inserted} records")
+        print(f"  ✓ Updated: {updated} records")
+        if errors > 0:
+            print(f"  ✗ Errors: {errors} records")
+        print("=" * 50)
+        print("✓ Upload completed successfully!")
+        print("=" * 50)
             
+    except Exception as e:
+        print(f"\n✗ Fatal error: {e}")
+        conn.rollback()
     finally:
         conn.close()
         print("✓ Database connection closed")

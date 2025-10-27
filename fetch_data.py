@@ -108,7 +108,8 @@ league_count = 0
 for league_id in unique_league_ids:
     try:
         # Get current season (2025/2026 based on live.csv)
-        url = f"{API_LEAGUE_URL}?key={API_KEY}&league_id={league_id}&season_id=2025/2026"
+        url = f"{API_LEAGUE_URL}?key={API_KEY}&season_id={league_id}"
+
         response = requests.get(url, timeout=30)
         
         if response.status_code == 200:
@@ -266,6 +267,13 @@ for idx, row in df.iterrows():
             'o05_potential': o05_pot,
             'o15_potential': o15_pot,
             'o45_potential': o45_pot,
+            
+            # Odds columns from live.csv (added as requested)
+            'odds_ft_over25': row.get('odds_ft_over25', 0),
+            'odds_ft_under25': row.get('odds_ft_under25', 0),
+            'odds_ft_1': row.get('odds_ft_1', 0),
+            'odds_ft_x': row.get('odds_ft_x', 0),
+            'odds_ft_2': row.get('odds_ft_2', 0),
         }
         
         all_features.append(features)
@@ -311,7 +319,8 @@ if all_features:
         'home_elo', 'away_elo', 'elo_diff',
         'league_avg_goals',
         'odds_ft_1_prob', 'odds_ft_2_prob',
-        'btts_potential', 'o05_potential', 'o15_potential', 'o45_potential'
+        'btts_potential', 'o05_potential', 'o15_potential', 'o45_potential',
+        'odds_ft_over25', 'odds_ft_under25', 'odds_ft_1', 'odds_ft_x', 'odds_ft_2'
     ]
     
     # Ensure all columns exist

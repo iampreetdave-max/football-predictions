@@ -257,31 +257,24 @@ results['predicted_total_goals'] = results['predicted_total_goals'].round(2)
 results['predicted_goal_diff'] = (results['predicted_home_goals'] - 
                                    results['predicted_away_goals']).round(2)
 
-# Predict match outcome (1=Home Win, X=Draw, 2=Away Win)
-def predict_outcome(home_goals, away_goals, threshold=0.15):
-    """Predict match outcome with draw threshold"""
-    diff = home_goals - away_goals
-    if diff > threshold:
-        return '1'  # Home Win
-    elif diff < -threshold:
-        return '2'  # Away Win
+def predict_moneyline(home_goals, away_goals):
+    """Simple outcome: if home goals > away goals → Home Win, if < → Away Win, else Draw"""
+    if home_goals > away_goals:
+        return '1'   # Home Win
+    elif home_goals < away_goals:
+        return '2'   # Away Win
     else:
-        return 'X'  # Draw
+        return 'X'   # Draw
 
+# Apply across all rows
 results['predicted_outcome'] = results.apply(
-    lambda row: predict_outcome(row['predicted_home_goals'], 
-                                row['predicted_away_goals']), 
+    lambda row: predict_moneyline(row['predicted_home_goals'], row['predicted_away_goals']),
     axis=1
 )
 
-# Add outcome labels for clarity
-outcome_labels = {
-    '1': 'Home Win',
-    'X': 'Draw', 
-    '2': 'Away Win'
-}
+# Add descriptive outcome label
+outcome_labels = {'1': 'Home Win', 'X': 'Draw', '2': 'Away Win'}
 results['outcome_label'] = results['predicted_outcome'].map(outcome_labels)
-
 # ========== ENHANCED OVER/UNDER PREDICTIONS ==========
 print("✓ Creating CTMCL-based over/under predictions...")
 
@@ -427,4 +420,5 @@ print("  ✓ Automatic cleanup of old predictions")
 print("  ✓ Profit calculations removed")
 
 print("\n" + "="*80)
+
 

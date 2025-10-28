@@ -309,7 +309,7 @@ results['predicted_btts'] = ((results['predicted_home_goals'] >= 0.75) &
                                        #  labels=['Low', 'Medium', 'High'])
 
 
-# outcome_prob = model.predict_proba(X_scaled)
+ outcome_prob = model.predict_proba(X_scaled)
 results['confidence'] = outcome_prob.max(axis=1)  # Highest class probability
 results['confidence_category'] = pd.cut(results['confidence'],
                                         bins=[0, 0.6, 0.8, 1.0],
@@ -420,5 +420,6 @@ print("  ✓ Automatic cleanup of old predictions")
 print("  ✓ Profit calculations removed")
 
 print("\n" + "="*80)
+
 
 

@@ -310,10 +310,18 @@ results['predicted_btts'] = ((results['predicted_home_goals'] >= 0.75) &
                               (results['predicted_away_goals'] >= 0.75)).astype(int)
 
 # Add confidence score (based on goal difference)
-results['confidence'] = np.abs(results['predicted_goal_diff'])
-results['confidence_category'] = pd.cut(results['confidence'], 
-                                         bins=[0, 0.3, 0.7, 10],
-                                         labels=['Low', 'Medium', 'High'])
+#results['confidence'] = np.abs(results['predicted_goal_diff'])
+#results['confidence_category'] = pd.cut(results['confidence'], 
+                                       #  bins=[0, 0.3, 0.7, 10],
+                                       #  labels=['Low', 'Medium', 'High'])
+
+
+# outcome_prob = model.predict_proba(X_scaled)
+results['confidence'] = outcome_prob.max(axis=1)  # Highest class probability
+results['confidence_category'] = pd.cut(results['confidence'],
+                                        bins=[0, 0.6, 0.8, 1.0],
+                                        labels=['Low', 'Medium', 'High'])
+
 
 # Add prediction timestamp
 results['prediction_date'] = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')
@@ -419,3 +427,4 @@ print("  ✓ Automatic cleanup of old predictions")
 print("  ✓ Profit calculations removed")
 
 print("\n" + "="*80)
+

@@ -260,9 +260,10 @@ results['predicted_goal_diff'] = (results['predicted_home_goals'] -
 # Predict match outcome (1=Home Win, X=Draw, 2=Away Win)
 def predict_outcome(home_goals, away_goals, threshold=0.15):
     """Predict match outcome with draw threshold"""
-    if home_goals>away_goals:
+    diff = home_goals - away_goals
+    if diff > threshold:
         return '1'  # Home Win
-    elif home_goals < away_goals:
+    elif diff < -threshold:
         return '2'  # Away Win
     else:
         return 'X'  # Draw

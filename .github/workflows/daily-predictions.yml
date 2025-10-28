@@ -37,7 +37,7 @@ jobs:
       run: python fetch_data.py
         
     - name: Step 3 - Generate Predictions
-      run: python predict.py
+      run: python predicting.py
         
     - name: Commit and push results
       run: |

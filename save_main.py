@@ -25,10 +25,42 @@ DB_CONFIG = {
 TABLE_NAME = 'agility_football_pred'
 CSV_FILE = 'best_match_predictions.csv'
 
+# ==================== LEAGUE ID MAPPING ====================
+LEAGUE_MAPPING = {
+    12325: "England Premier League",
+    15050: "England Premier League",
+    13497: "Europe UEFA Youth League",
+    16004: "Europe UEFA Youth League",
+    12316: "Spain La Liga",
+    14956: "Spain La Liga",
+    12530: "Italy Serie A",
+    15068: "Italy Serie A",
+    12529: "Germany Bundesliga",
+    14968: "Germany Bundesliga",
+    13973: "USA MLS",
+    12337: "France Ligue 1",
+    14932: "France Ligue 1",
+    12322: "Netherlands Eredivisie",
+    14936: "Netherlands Eredivisie",
+    12585: "Portugal LigaPro",
+    15717: "Portugal LigaPro",
+    12136: "Mexico Liga MX",
+    15234: "Mexico Liga MX"
+}
+
 print("="*80)
 print("AGILITY FOOTBALL PREDICTIONS - SAVE TO DATABASE")
 print("="*80)
 print(f"Timestamp: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}")
+
+# ==================== HELPER FUNCTIONS ====================
+def get_league_name(league_id):
+    """Get league name from league_id using the mapping"""
+    try:
+        league_id_int = int(league_id)
+        return LEAGUE_MAPPING.get(league_id_int, "Unknown League")
+    except:
+        return "Unknown League"
 
 # ==================== LOAD CSV DATA ====================
 print(f"\n[1/5] Loading CSV file: {CSV_FILE}")
@@ -96,6 +128,7 @@ db_data = pd.DataFrame()
 db_data['match_id'] = df['match_id']
 db_data['date'] = df['date']
 db_data['league'] = df['league_id'].astype(str)
+db_data['league_name'] = df['league_id'].apply(get_league_name)
 db_data['home_team'] = df['home_team_name']
 db_data['away_team'] = df['away_team_name']
 
@@ -134,11 +167,19 @@ db_data['actual_total_goals'] = None
 print(f"✓ Transformed {len(db_data)} records")
 print(f"  Fields mapped: {len(db_data.columns)}")
 
+# Show league name mapping summary
+league_counts = db_data['league_name'].value_counts()
+print(f"\n  📊 League distribution:")
+for league, count in league_counts.items():
+    print(f"    • {league}: {count} matches")
+
 # Debug: Show first row mapping
 if len(db_data) > 0:
     print(f"\n  Sample mapping (first record):")
     first_row = db_data.iloc[0]
     print(f"    match_id: {first_row['match_id']}")
+    print(f"    league: {first_row['league']}")
+    print(f"    league_name: {first_row['league_name']}")
     print(f"    home_team: {first_row['home_team']}")
     print(f"    away_team: {first_row['away_team']}")
     print(f"    status: {first_row['status']}")
@@ -198,7 +239,7 @@ print(f"\n[5/5] Inserting {len(new_data)} new records...")
 
 insert_query = sql.SQL("""
     INSERT INTO {} (
-        match_id, date, league, home_team, away_team,
+        match_id, date, league, league_name, home_team, away_team,
         home_odds, away_odds, draw_odds, over_2_5_odds, under_2_5_odds,
         ctmcl, predicted_home_goals, predicted_away_goals, confidence, delta,
         predicted_outcome, predicted_winner,
@@ -208,7 +249,7 @@ insert_query = sql.SQL("""
     ) VALUES (
         %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
         %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-        %s, %s, %s, %s, %s, %s, %s
+        %s, %s, %s, %s, %s, %s, %s, %s
     )
 """).format(sql.Identifier(TABLE_NAME))
 
@@ -266,6 +307,20 @@ try:
     cursor.execute(sql.SQL("SELECT COUNT(*) FROM {}").format(sql.Identifier(TABLE_NAME)))
     total = cursor.fetchone()[0]
     print(f"  Total records in database: {total}")
+    
+    # Records by league
+    cursor.execute(sql.SQL("""
+        SELECT league_name, COUNT(*) 
+        FROM {} 
+        GROUP BY league_name
+        ORDER BY COUNT(*) DESC
+    """).format(sql.Identifier(TABLE_NAME)))
+    
+    league_counts = cursor.fetchall()
+    if league_counts:
+        print(f"\n  Records by league:")
+        for league, count in league_counts:
+            print(f"    • {league}: {count}")
     
     # Records by status
     cursor.execute(sql.SQL("""

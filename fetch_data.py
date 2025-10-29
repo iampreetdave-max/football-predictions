@@ -303,7 +303,7 @@ if all_features:
     # Reorder columns to include date - UPDATED!
     column_order = [
         'match_id', 'date',  # Date added here!
-        'home_team_id', 'away_team_id', 'league_id',
+        'home_team_id', 'away_team_id', 'league_id','league_name'
         'home_team_name', 'away_team_name',
         'CTMCL', 'avg_goals_market',
         'team_a_xg_prematch', 'team_b_xg_prematch',
@@ -382,3 +382,4 @@ print("=" * 80)
 print(f"✓ Output file: extracted_features_complete.csv")
 print(f"✓ Ready for use with predict.py")
 print(f"✓ Date column included: Extracted from live.csv (date only, no time)")
+

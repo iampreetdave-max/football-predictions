@@ -40,6 +40,29 @@ ALLOWED_LEAGUE_IDS = {
     12136, 15234
 }
 
+# League ID to Name mapping - ensures consistent league names
+LEAGUE_ID_TO_NAME = {
+    12325: "England Premier League",
+    15050: "England Premier League",
+    13497: "Europe UEFA Youth League",
+    16004: "Europe UEFA Youth League",
+    12316: "Spain La Liga",
+    14956: "Spain La Liga",
+    12530: "Italy Serie A",
+    15068: "Italy Serie A",
+    12529: "Germany Bundesliga",
+    14968: "Germany Bundesliga",
+    13973: "USA MLS",
+    12337: "France Ligue 1",
+    14932: "France Ligue 1",
+    12322: "Netherlands Eredivisie",
+    14936: "Netherlands Eredivisie",
+    12585: "Portugal LigaPro",
+    15717: "Portugal LigaPro",
+    12136: "Mexico Liga MX",
+    15234: "Mexico Liga MX"
+}
+
 class FootyStatsAPI:
     """FootyStats API Client"""
 
@@ -183,7 +206,7 @@ def extract_match_data(matches: List[Dict]) -> pd.DataFrame:
             
             # League
             "league_id": safe_get(match, "competition_id"),
-            "league_name": safe_get(match, "competition_name", safe_get(match, "league_name")),
+            "league_name": LEAGUE_ID_TO_NAME.get(safe_get(match, "competition_id"), safe_get(match, "competition_name", safe_get(match, "league_name"))),
             
             # Teams
             "homeID": safe_get(match, "homeID"),

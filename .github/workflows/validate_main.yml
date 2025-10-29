@@ -1,4 +1,4 @@
-name: validate
+name: validate main
 
 on:
   schedule:

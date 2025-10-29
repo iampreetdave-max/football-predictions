@@ -15,6 +15,31 @@ import time
 API_KEY = "633379bdd5c4c3eb26919d8570866801e1c07f399197ba8c5311446b8ea77a49"
 BASE_URL = "https://api.footystats.org"
 
+# ==================== ALLOWED LEAGUES FILTER ====================
+# Only save matches from these league IDs
+ALLOWED_LEAGUE_IDS = {
+    # England Premier League
+    12325, 15050,
+    # Europe UEFA Youth League
+    13497, 16004,
+    # Spain La Liga
+    12316, 14956,
+    # Italy Serie A
+    12530, 15068,
+    # Germany Bundesliga
+    12529, 14968,
+    # USA MLS
+    13973,
+    # France Ligue 1
+    12337, 14932,
+    # Netherlands Eredivisie
+    12322, 14936,
+    # Portugal LigaPro
+    12585, 15717,
+    # Mexico Liga MX
+    12136, 15234
+}
+
 class FootyStatsAPI:
     """FootyStats API Client"""
 
@@ -286,6 +311,12 @@ def main():
     print("=" * 80)
     print()
     
+    print("🔍 LEAGUE FILTER ACTIVE")
+    print(f"   Only saving matches from {len(ALLOWED_LEAGUE_IDS)} league IDs")
+    print(f"   Leagues: Premier League, La Liga, Serie A, Bundesliga, MLS,")
+    print(f"            Ligue 1, Eredivisie, LigaPro, Liga MX, UEFA Youth")
+    print()
+    
     api_client = FootyStatsAPI(API_KEY)
     
     all_matches_combined = []
@@ -317,8 +348,17 @@ def main():
             for match in matches:
                 match['fetch_date'] = fetch_date
             
-            day_matches.extend(matches)
-            print(f"✓ {len(matches)} matches")
+            # ==================== FILTER BY ALLOWED LEAGUES ====================
+            # Only keep matches from allowed league IDs
+            matches_before_filter = len(matches)
+            filtered_matches = [
+                match for match in matches 
+                if match.get('competition_id') in ALLOWED_LEAGUE_IDS
+            ]
+            filtered_out = matches_before_filter - len(filtered_matches)
+            
+            day_matches.extend(filtered_matches)
+            print(f"✓ {len(matches)} matches (kept {len(filtered_matches)}, filtered {filtered_out})")
             
             pager = data.get("pager", {})
             if pager.get('current_page', 0) >= pager.get('max_page', 0):
@@ -354,7 +394,16 @@ def main():
         print(f"\n📊 Summary:")
         print(f"   Total matches: {len(df)}")
         print(f"   Date range: {', '.join(dates_info)}")
-        print(f"   Leagues: {df['league_name'].nunique() if 'league_name' in df.columns else 'N/A'}")
+        print(f"   Unique leagues: {df['league_name'].nunique() if 'league_name' in df.columns else 'N/A'}")
+        
+        # Show leagues breakdown
+        if 'league_name' in df.columns and 'league_id' in df.columns:
+            print(f"\n📋 Leagues Included (Filtered):")
+            league_summary = df.groupby(['league_name', 'league_id']).size().reset_index(name='count')
+            league_summary = league_summary.sort_values('count', ascending=False)
+            for _, row in league_summary.iterrows():
+                print(f"   • {row['league_name']:<30} (ID: {row['league_id']:<6}) - {row['count']} matches")
+        
         
         # Show key fields status
         print(f"\n📋 Key Fields Availability:")

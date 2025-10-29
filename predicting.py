@@ -220,6 +220,7 @@ results = pd.DataFrame({
     'league_id': df['league_id'],
     'home_team_name': df['home_team_name'],
     'away_team_name': df['away_team_name'],
+    'league_name': df['league_name'] if 'league_name' in df.columns else None,
     
     # NEW: Additional columns from extracted_features
     'CTMCL': df['CTMCL'].values,
@@ -419,3 +420,4 @@ print("  ✓ Automatic cleanup of old predictions")
 print("  ✓ Profit calculations removed")
 
 print("\n" + "="*80)
+

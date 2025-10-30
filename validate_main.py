@@ -19,11 +19,13 @@ import warnings
 import psycopg2
 from psycopg2 import sql
 from pathlib import Path
+import json
 warnings.filterwarnings('ignore')
 
 # ==================== API CONFIGURATION ====================
 API_KEY = "633379bdd5c4c3eb26919d8570866801e1c07f399197ba8c5311446b8ea77a49"
-API_MATCH_URL = "https://api.football-data-api.com/match"
+# Using FootyStats API endpoint format
+API_MATCH_URL = "https://api.footystats.org/match"
 
 # ==================== DATABASE CONFIGURATION ====================
 DB_CONFIG = {
@@ -65,9 +67,6 @@ print("="*80)
 
 try:
     # Get predictions for the validation date that haven't been validated yet
-    # ORDER BY match_id ensures consistent processing order
-    # NOTE: Records maintain their original insertion order (id/created_at)
-    # even after validation updates updated_at timestamp
     query = sql.SQL("""
         SELECT 
             match_id, date, home_team, away_team,
@@ -127,7 +126,6 @@ print("="*80)
 
 successful_updates = 0
 failed_fetches = 0
-already_complete = 0
 
 for idx, row in pending_matches.iterrows():
     match_id = row['match_id']
@@ -144,21 +142,44 @@ for idx, row in pending_matches.iterrows():
     odds_draw = row['draw_odds']
     
     try:
-        # Fetch match details from API
-        url = f"{API_MATCH_URL}?key={API_KEY}&match_id={match_id}"
+        # Fetch match details from API - using 'id' parameter for FootyStats
+        url = f"{API_MATCH_URL}?key={API_KEY}&id={match_id}"
         response = requests.get(url, timeout=30)
         
+        # Check if we got a valid response
         if response.status_code == 200:
-            data = response.json()
+            # Check if response has content
+            if not response.text or response.text.strip() == '':
+                print(f"✗ {match_id}: Empty response from API")
+                failed_fetches += 1
+                continue
             
+            try:
+                data = response.json()
+            except json.JSONDecodeError as je:
+                print(f"✗ {match_id}: Invalid JSON response - {str(je)}")
+                print(f"  Response preview: {response.text[:100]}")
+                failed_fetches += 1
+                continue
+            
+            # Check if API returned success
             if data.get('success') and data.get('data'):
                 match_data = data['data']
                 status = match_data.get('status', '')
                 
                 if status == 'complete':
                     # ==================== GET ACTUAL SCORES ====================
-                    home_score = match_data.get('homeGoalCount', 0)
-                    away_score = match_data.get('awayGoalCount', 0)
+                    # Try different possible field names for scores
+                    home_score = (match_data.get('homeGoalCount') or 
+                                 match_data.get('home_goals') or 
+                                 match_data.get('score_home') or 0)
+                    away_score = (match_data.get('awayGoalCount') or 
+                                 match_data.get('away_goals') or 
+                                 match_data.get('score_away') or 0)
+                    
+                    # Convert to integers to be safe
+                    home_score = int(home_score)
+                    away_score = int(away_score)
                     total_goals = home_score + away_score
                     
                     # ==================== DETERMINE ACTUAL WINNER ====================
@@ -258,7 +279,7 @@ for idx, row in pending_matches.iterrows():
                         ),
                         [status.upper(), match_id]
                     )
-                    conn.commit()  # Commit status update
+                    conn.commit()
                     print(f"⚠ {match_id}: Match {status}")
                     failed_fetches += 1
                     
@@ -267,8 +288,14 @@ for idx, row in pending_matches.iterrows():
                     print(f"⏳ {match_id}: Match not complete (status: {status})")
                     failed_fetches += 1
             else:
-                print(f"⚠ {match_id}: No data from API")
+                # API returned success=false or no data
+                error_msg = data.get('error', 'No data from API')
+                print(f"⚠ {match_id}: {error_msg}")
                 failed_fetches += 1
+                
+        elif response.status_code == 422:
+            print(f"✗ {match_id}: HTTP 422 - Invalid match ID or API parameter format")
+            failed_fetches += 1
         else:
             print(f"✗ {match_id}: HTTP {response.status_code}")
             failed_fetches += 1
@@ -276,8 +303,14 @@ for idx, row in pending_matches.iterrows():
         # Rate limiting to avoid overwhelming the API
         time.sleep(0.3)
         
+    except requests.exceptions.Timeout:
+        print(f"✗ {match_id}: Request timeout")
+        failed_fetches += 1
+    except requests.exceptions.RequestException as e:
+        print(f"✗ {match_id}: Request error - {str(e)}")
+        failed_fetches += 1
     except Exception as e:
-        print(f"✗ {match_id}: Error - {str(e)}")
+        print(f"✗ {match_id}: Unexpected error - {str(e)}")
         failed_fetches += 1
 
 # ==================== COMMIT UPDATES ====================

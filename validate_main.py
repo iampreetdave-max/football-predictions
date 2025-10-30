@@ -24,8 +24,8 @@ warnings.filterwarnings('ignore')
 
 # ==================== API CONFIGURATION ====================
 API_KEY = "633379bdd5c4c3eb26919d8570866801e1c07f399197ba8c5311446b8ea77a49"
-# Using FootyStats API endpoint format
-API_MATCH_URL = "https://api.footystats.org/match"
+# Using the SAME API endpoint as the working validate_predictions.py
+API_MATCH_URL = "https://api.football-data-api.com/match"
 
 # ==================== DATABASE CONFIGURATION ====================
 DB_CONFIG = {
@@ -99,13 +99,18 @@ try:
         'status', 'actual_winner'
     ])
     
+    # Show sample match IDs for debugging
+    print(f"\n🔍 Sample match IDs from database:")
+    for i, match_id in enumerate(predictions_df['match_id'].head(3)):
+        print(f"    {i+1}. {match_id} (type: {type(match_id).__name__})")
+    
     # Filter only PENDING or not yet validated matches
     pending_matches = predictions_df[
         (predictions_df['status'] == 'PENDING') | 
         (predictions_df['actual_winner'].isna())
     ]
     
-    print(f"✓ {len(pending_matches)} matches pending validation")
+    print(f"\n✓ {len(pending_matches)} matches pending validation")
     print(f"✓ {len(predictions_df) - len(pending_matches)} matches already validated")
     
     if len(pending_matches) == 0:
@@ -123,9 +128,31 @@ except Exception as e:
 # ==================== FETCH MATCH RESULTS ====================
 print("\n[3/6] Fetching match results from API...")
 print("="*80)
+print("📡 API Endpoint:", API_MATCH_URL)
+print("="*80)
 
 successful_updates = 0
 failed_fetches = 0
+api_errors = {'422': 0, 'empty': 0, 'json_error': 0, 'other': 0}
+
+# Test with first match to see response format
+if len(pending_matches) > 0:
+    first_match_id = pending_matches.iloc[0]['match_id']
+    test_url = f"{API_MATCH_URL}?key={API_KEY}&match_id={first_match_id}"
+    print(f"\n🧪 Testing API with first match ID: {first_match_id}")
+    print(f"📍 URL: {test_url[:80]}...")
+    
+    try:
+        test_response = requests.get(test_url, timeout=30)
+        print(f"📊 Status Code: {test_response.status_code}")
+        if test_response.text:
+            print(f"📄 Response length: {len(test_response.text)} bytes")
+            print(f"📝 Response preview: {test_response.text[:200]}")
+        else:
+            print(f"⚠️  Response is empty")
+    except Exception as e:
+        print(f"⚠️  Test request failed: {e}")
+    print("="*80)
 
 for idx, row in pending_matches.iterrows():
     match_id = row['match_id']
@@ -142,23 +169,25 @@ for idx, row in pending_matches.iterrows():
     odds_draw = row['draw_odds']
     
     try:
-        # Fetch match details from API - using 'id' parameter for FootyStats
-        url = f"{API_MATCH_URL}?key={API_KEY}&id={match_id}"
+        # Fetch match details from API - USING SAME FORMAT AS WORKING SCRIPT
+        url = f"{API_MATCH_URL}?key={API_KEY}&match_id={match_id}"
         response = requests.get(url, timeout=30)
         
-        # Check if we got a valid response
+        # Check status code
         if response.status_code == 200:
             # Check if response has content
             if not response.text or response.text.strip() == '':
                 print(f"✗ {match_id}: Empty response from API")
+                api_errors['empty'] += 1
                 failed_fetches += 1
                 continue
             
+            # Try to parse JSON
             try:
                 data = response.json()
             except json.JSONDecodeError as je:
-                print(f"✗ {match_id}: Invalid JSON response - {str(je)}")
-                print(f"  Response preview: {response.text[:100]}")
+                print(f"✗ {match_id}: Invalid JSON - {str(je)[:50]}")
+                api_errors['json_error'] += 1
                 failed_fetches += 1
                 continue
             
@@ -169,15 +198,10 @@ for idx, row in pending_matches.iterrows():
                 
                 if status == 'complete':
                     # ==================== GET ACTUAL SCORES ====================
-                    # Try different possible field names for scores
-                    home_score = (match_data.get('homeGoalCount') or 
-                                 match_data.get('home_goals') or 
-                                 match_data.get('score_home') or 0)
-                    away_score = (match_data.get('awayGoalCount') or 
-                                 match_data.get('away_goals') or 
-                                 match_data.get('score_away') or 0)
+                    home_score = match_data.get('homeGoalCount', 0)
+                    away_score = match_data.get('awayGoalCount', 0)
                     
-                    # Convert to integers to be safe
+                    # Convert to integers
                     home_score = int(home_score)
                     away_score = int(away_score)
                     total_goals = home_score + away_score
@@ -191,21 +215,18 @@ for idx, row in pending_matches.iterrows():
                         actual_winner = 'Draw'
                     
                     # ==================== DETERMINE ACTUAL OVER/UNDER ====================
-                    # Based on 2.5 goals
                     if total_goals > 2.5:
                         actual_over_under = 'Over 2.5'
                     else:
                         actual_over_under = 'Under 2.5'
                     
                     # ==================== CALCULATE PROFIT/LOSS FOR OVER/UNDER ====================
-                    if 'Over' in predicted_ou:
-                        # We predicted over 2.5
+                    if 'Over' in str(predicted_ou):
                         if 'Over' in actual_over_under:
                             profit_loss_ou = round(odds_over - 1, 2) if not pd.isna(odds_over) else 0
                         else:
                             profit_loss_ou = -1.0
                     else:
-                        # We predicted under 2.5
                         if 'Under' in actual_over_under:
                             profit_loss_ou = round(odds_under - 1, 2) if not pd.isna(odds_under) else 0
                         else:
@@ -258,21 +279,15 @@ for idx, row in pending_matches.iterrows():
                         match_id
                     ))
                     
-                    # Commit this update immediately
                     conn.commit()
-                    
                     successful_updates += 1
                     
                     # Display result
-                    print(f"\n✓ Match {successful_updates}: {row['home_team']} vs {row['away_team']}")
-                    print(f"  Score: {home_score} - {away_score}")
-                    print(f"  Winner: {actual_winner}")
-                    print(f"  Total Goals: {total_goals} ({actual_over_under})")
-                    print(f"  P/L Over/Under: ${profit_loss_ou:.2f}")
-                    print(f"  P/L Winner: ${profit_loss_ml:.2f}")
+                    print(f"✓ {match_id}: {row['home_team']} {home_score}-{away_score} {row['away_team']}")
+                    print(f"  → Winner: {actual_winner} | O/U: {actual_over_under}")
+                    print(f"  → P/L O/U: ${profit_loss_ou:.2f} | P/L Winner: ${profit_loss_ml:.2f}")
                     
                 elif status in ['cancelled', 'postponed', 'abandoned']:
-                    # Update status for cancelled/postponed matches
                     cursor.execute(
                         sql.SQL("UPDATE {} SET status = %s WHERE match_id = %s").format(
                             sql.Identifier(TABLE_NAME)
@@ -284,34 +299,49 @@ for idx, row in pending_matches.iterrows():
                     failed_fetches += 1
                     
                 else:
-                    # Match not complete yet
-                    print(f"⏳ {match_id}: Match not complete (status: {status})")
+                    print(f"⏳ {match_id}: Not complete (status: {status})")
                     failed_fetches += 1
             else:
-                # API returned success=false or no data
                 error_msg = data.get('error', 'No data from API')
                 print(f"⚠ {match_id}: {error_msg}")
+                api_errors['other'] += 1
                 failed_fetches += 1
                 
         elif response.status_code == 422:
             print(f"✗ {match_id}: HTTP 422 - Invalid match ID or API parameter format")
+            api_errors['422'] += 1
             failed_fetches += 1
         else:
             print(f"✗ {match_id}: HTTP {response.status_code}")
+            api_errors['other'] += 1
             failed_fetches += 1
         
-        # Rate limiting to avoid overwhelming the API
-        time.sleep(0.3)
+        # Rate limiting
+        time.sleep(0.25)
         
     except requests.exceptions.Timeout:
-        print(f"✗ {match_id}: Request timeout")
-        failed_fetches += 1
-    except requests.exceptions.RequestException as e:
-        print(f"✗ {match_id}: Request error - {str(e)}")
+        print(f"✗ {match_id}: Timeout")
+        api_errors['other'] += 1
         failed_fetches += 1
     except Exception as e:
-        print(f"✗ {match_id}: Unexpected error - {str(e)}")
+        print(f"✗ {match_id}: Error - {str(e)}")
+        api_errors['other'] += 1
         failed_fetches += 1
+
+# ==================== ERROR ANALYSIS ====================
+print("\n" + "="*80)
+print("📊 API ERROR BREAKDOWN:")
+print("="*80)
+if api_errors['422'] > 0:
+    print(f"  • HTTP 422 errors: {api_errors['422']}")
+    print(f"    → This usually means the match_id format is not recognized by the API")
+    print(f"    → Your match IDs might be from a different data source")
+if api_errors['empty'] > 0:
+    print(f"  • Empty responses: {api_errors['empty']}")
+if api_errors['json_error'] > 0:
+    print(f"  • JSON parse errors: {api_errors['json_error']}")
+if api_errors['other'] > 0:
+    print(f"  • Other errors: {api_errors['other']}")
 
 # ==================== COMMIT UPDATES ====================
 print("\n[4/6] Committing database updates...")
@@ -319,17 +349,16 @@ print("="*80)
 
 try:
     conn.commit()
-    print(f"✓ Database updates committed successfully!")
+    print(f"✓ Database updates committed!")
 except Exception as e:
     conn.rollback()
-    print(f"✗ Database commit failed: {e}")
+    print(f"✗ Commit failed: {e}")
 
 # ==================== CALCULATE STATISTICS ====================
 print("\n[5/6] Calculating performance statistics...")
 print("="*80)
 
 try:
-    # Overall statistics
     cursor.execute(sql.SQL("""
         SELECT 
             COUNT(*) as total_validated,
@@ -352,7 +381,6 @@ try:
         print(f"    • Avg P/L (O/U): ${stats[4]:.2f}" if stats[4] else "    • Avg P/L (O/U): $0.00")
         print(f"    • Avg P/L (Winner): ${stats[5]:.2f}" if stats[5] else "    • Avg P/L (Winner): $0.00")
     
-    # Accuracy by prediction type
     cursor.execute(sql.SQL("""
         SELECT 
             COUNT(*) as total,
@@ -381,7 +409,6 @@ try:
         print(f"    • Over/Under: {accuracy[1]}/{accuracy[0]} ({ou_accuracy:.1f}%)")
         print(f"    • Winner: {accuracy[2]}/{accuracy[0]} ({winner_accuracy:.1f}%)")
     
-    # Accuracy by confidence category
     cursor.execute(sql.SQL("""
         SELECT 
             confidence_category,
@@ -414,40 +441,35 @@ try:
             print(f"    • {category}: {correct}/{total} ({accuracy_pct:.1f}%)")
 
 except Exception as e:
-    print(f"⚠ Could not calculate statistics: {e}")
+    print(f"⚠ Statistics error: {e}")
 
 # ==================== SUMMARY ====================
 print("\n[6/6] SUMMARY")
 print("="*80)
 print(f"✓ Successfully updated: {successful_updates} matches")
-print(f"⏳ Pending/Failed: {failed_fetches} matches")
+print(f"✗ Failed/Pending: {failed_fetches} matches")
+
+if successful_updates == 0 and api_errors['422'] > 0:
+    print("\n⚠️  WARNING: All requests returned HTTP 422")
+    print("   This suggests the match IDs in your database are not compatible")
+    print("   with the football-data-api.com API.")
+    print("\n💡 POSSIBLE SOLUTIONS:")
+    print("   1. Check if match IDs are from a different API/source")
+    print("   2. Verify the API key is valid and has access to these matches")
+    print("   3. Compare match_id format with the old working database")
 
 print(f"\n📊 Updated fields per match:")
-print(f"  • actual_winner")
-print(f"  • actual_over_under")
-print(f"  • actual_home_team_goals (NEW)")
-print(f"  • actual_away_team_goals (NEW)")
-print(f"  • actual_total_goals (NEW)")
-print(f"  • status")
-print(f"  • profit_loss_outcome")
-print(f"  • profit_loss_winner")
-
-# ==================== FINAL COMMIT ====================
-print(f"\nEnsuring all updates are committed...")
-try:
-    conn.commit()
-    print("✓ Final commit successful - all updates saved!")
-except Exception as e:
-    print(f"✗ Final commit error: {e}")
+print(f"  • actual_winner, actual_over_under")
+print(f"  • actual_home_team_goals, actual_away_team_goals, actual_total_goals")
+print(f"  • status, profit_loss_outcome, profit_loss_winner")
 
 # ==================== CLOSE CONNECTION ====================
 cursor.close()
 conn.close()
-print(f"✓ Database connection closed")
+print(f"\n✓ Database connection closed")
 
 print("\n" + "="*80)
 print("✅ VALIDATION COMPLETE!")
 print("="*80)
 print(f"⏰ Completed at: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}")
-print("\n💡 Tip: This script runs automatically via GitHub Actions daily")
 print("="*80)

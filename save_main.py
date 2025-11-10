@@ -22,7 +22,7 @@ DB_CONFIG = {
     'password': 'deeptanshu@123'
 }
 
-TABLE_NAME = 'agility_football_pred'
+TABLE_NAME = 'agility_soccer_v1'
 CSV_FILE = 'best_match_predictions.csv'
 
 # ==================== LEAGUE ID MAPPING ====================

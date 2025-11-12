@@ -20,8 +20,8 @@ BASE_URL = "https://api.footystats.org"
 ALLOWED_LEAGUE_IDS = {
     # England Premier League
     12325, 15050,
-    # Europe UEFA Youth League
-    13497, 16004,
+    # Europe UEFA
+    14924,
     # Spain La Liga
     12316, 14956,
     # Italy Serie A
@@ -44,8 +44,8 @@ ALLOWED_LEAGUE_IDS = {
 LEAGUE_ID_TO_NAME = {
     12325: "England Premier League",
     15050: "England Premier League",
-    13497: "Europe UEFA Youth League",
-    16004: "Europe UEFA Youth League",
+   
+    14924: "Europe UEFA",
     12316: "Spain La Liga",
     14956: "Spain La Liga",
     12530: "Italy Serie A",
@@ -452,3 +452,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

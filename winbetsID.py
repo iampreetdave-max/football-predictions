@@ -12,7 +12,7 @@ db_config = {
 }
 
 # Load CSV mapping file
-csv_path = 'mapping.csv'
+csv_path = 'map.csv'
 mapping_df = pd.read_csv(csv_path)
 
 # Create lookup dictionaries

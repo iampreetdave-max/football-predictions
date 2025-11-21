@@ -34,8 +34,8 @@ ALLOWED_LEAGUE_IDS = {
     12337, 14932,
     # Netherlands Eredivisie
     12322, 14936,
-    # Portugal LigaPro
-    12585, 15717,
+    # Portugal Liga
+    15115,
     # Mexico Liga MX
     12136, 15234
 }
@@ -452,4 +452,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 

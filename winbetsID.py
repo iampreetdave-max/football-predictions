@@ -13,12 +13,24 @@ db_config = {
 
 # Load CSV mapping file
 csv_path = 'map.csv'
-mapping_df = pd.read_csv(csv_path)
+mapping_df = pd.read_csv(csv_path, encoding='utf-8-sig')
 
-# Create lookup dictionaries
-team_name_lookup = dict(zip(mapping_df['TeamName_Agility'].str.strip(), mapping_df['TeamName_Wb']))
-team_id_lookup = dict(zip(mapping_df['TeamId_Agility'], mapping_df['TeamId_Wb']))
-league_lookup = dict(zip(mapping_df['League_Agility'], mapping_df['League_Wb']))
+# Create lookup dictionaries with league context to handle teams in multiple leagues
+team_name_lookup = {}
+team_id_lookup = {}
+league_lookup = {}
+
+for _, row in mapping_df.iterrows():
+    team_name_clean = row['TeamName_Agility'].strip()
+    league_clean = row['League_Agility'].strip()
+    
+    # Composite key: (team_id, league) and (team_name, league) for exact matching
+    team_id_lookup[(row['TeamId_Agility'], league_clean)] = row['TeamId_Wb']
+    team_name_lookup[(team_name_clean, league_clean)] = row['TeamName_Wb']
+    
+    # Store league mapping
+    if league_clean not in league_lookup:
+        league_lookup[league_clean] = row['League_Wb']
 
 print("✓ CSV loaded. Created lookup dictionaries")
 print(f"  - Teams: {len(team_name_lookup)}")
@@ -51,26 +63,30 @@ try:
         # Map home team name (only if NULL)
         if home_TeamName_Wb is None and home_team:
             home_team_clean = home_team.strip()
-            wb_home_name = team_name_lookup.get(home_team_clean)
+            league_clean = league_name.strip()
+            wb_home_name = team_name_lookup.get((home_team_clean, league_clean))
             if wb_home_name:
                 updates['home_TeamName_Wb'] = wb_home_name
         
         # Map away team name (only if NULL)
         if away_TeamName_Wb is None and away_team:
             away_team_clean = away_team.strip()
-            wb_away_name = team_name_lookup.get(away_team_clean)
+            league_clean = league_name.strip()
+            wb_away_name = team_name_lookup.get((away_team_clean, league_clean))
             if wb_away_name:
                 updates['away_TeamName_Wb'] = wb_away_name
         
         # Map home team ID (only if NULL)
         if home_TeamId_Wb is None and home_id:
-            wb_home_id = team_id_lookup.get(home_id)
+            league_clean = league_name.strip()
+            wb_home_id = team_id_lookup.get((home_id, league_clean))
             if wb_home_id:
                 updates['home_TeamId_Wb'] = wb_home_id
         
         # Map away team ID (only if NULL)
         if away_TeamId_Wb is None and away_id:
-            wb_away_id = team_id_lookup.get(away_id)
+            league_clean = league_name.strip()
+            wb_away_id = team_id_lookup.get((away_id, league_clean))
             if wb_away_id:
                 updates['away_TeamId_Wb'] = wb_away_id
         

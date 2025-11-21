@@ -129,6 +129,8 @@ db_data['match_id'] = df['match_id']
 db_data['date'] = df['date']
 db_data['league'] = df['league_id'].astype(str)
 db_data['league_name'] = df['league_id'].apply(get_league_name)
+db_data['home_id'] = df['home_team_id']
+db_data['away_id'] = df['away_team_id']
 db_data['home_team'] = df['home_team_name']
 db_data['away_team'] = df['away_team_name']
 
@@ -239,7 +241,7 @@ print(f"\n[5/5] Inserting {len(new_data)} new records...")
 
 insert_query = sql.SQL("""
     INSERT INTO {} (
-        match_id, date, league, league_name, home_team, away_team,
+        match_id, date, league, league_name, home_id, away_id, home_team, away_team,
         home_odds, away_odds, draw_odds, over_2_5_odds, under_2_5_odds,
         ctmcl, predicted_home_goals, predicted_away_goals, confidence, delta,
         predicted_outcome, predicted_winner,
@@ -249,7 +251,7 @@ insert_query = sql.SQL("""
     ) VALUES (
         %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
         %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-        %s, %s, %s, %s, %s, %s, %s, %s
+        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
     )
 """).format(sql.Identifier(TABLE_NAME))
 

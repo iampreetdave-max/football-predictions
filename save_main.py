@@ -44,8 +44,8 @@ LEAGUE_MAPPING = {
     14936: "Netherlands Eredivisie",
    
     12136: "Mexico Liga MX",
-    15115: "Portugal Liga NOS"
-
+    15115: "Portugal Liga NOS",
+    15234: "Mexico Liga MX"
 }
 
 print("="*80)

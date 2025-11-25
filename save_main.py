@@ -12,14 +12,15 @@ from psycopg2 import sql
 from datetime import datetime
 import sys
 from pathlib import Path
+import os
 
 # ==================== DATABASE CONFIGURATION ====================
 DB_CONFIG = {
-    'host': 'winbets-db.postgres.database.azure.com',
-    'port': 5432,
-    'database': 'postgres',
-    'user': 'winbets',
-    'password': 'deeptanshu@123'
+    'host': os.getenv('DB_HOST'),
+    'port': int(os.getenv('DB_PORT', 5432)),
+    'database': os.getenv('DB_DATABASE'),
+    'user': os.getenv('DB_USER'),
+    'password': os.getenv('DB_PASSWORD')
 }
 
 TABLE_NAME = 'agility_soccer_v1'
@@ -61,6 +62,34 @@ def get_league_name(league_id):
         return LEAGUE_MAPPING.get(league_id_int, "Unknown League")
     except:
         return "Unknown League"
+
+def calculate_grade(confidence):
+    """Calculate letter grade from confidence score (0-1 scale)"""
+    if pd.isna(confidence):
+        return None
+    
+    score = confidence * 100
+    
+    if score >= 90:
+        return "A+"
+    elif score >= 85:
+        return "A"
+    elif score >= 80:
+        return "A-"
+    elif score >= 75:
+        return "B+"
+    elif score >= 70:
+        return "B"
+    elif score >= 65:
+        return "B-"
+    elif score >= 60:
+        return "C+"
+    elif score >= 55:
+        return "C"
+    elif score >= 50:
+        return "C-"
+    else:
+        return "D"
 
 # ==================== LOAD CSV DATA ====================
 print(f"\n[1/5] Loading CSV file: {CSV_FILE}")
@@ -146,6 +175,7 @@ db_data['ctmcl'] = df['CTMCL']
 db_data['predicted_home_goals'] = df['predicted_home_goals']
 db_data['predicted_away_goals'] = df['predicted_away_goals']
 db_data['confidence'] = df['confidence']
+db_data['grade'] = df['confidence'].apply(calculate_grade)
 db_data['delta'] = df['predicted_goal_diff']
 
 # Predictions
@@ -243,7 +273,7 @@ insert_query = sql.SQL("""
     INSERT INTO {} (
         match_id, date, league, league_name, home_id, away_id, home_team, away_team,
         home_odds, away_odds, draw_odds, over_2_5_odds, under_2_5_odds,
-        ctmcl, predicted_home_goals, predicted_away_goals, confidence, delta,
+        ctmcl, predicted_home_goals, predicted_away_goals, confidence, grade, delta,
         predicted_outcome, predicted_winner,
         status, data_source, confidence_category,
         actual_over_under, actual_winner, profit_loss_outcome, profit_loss_winner,
@@ -251,7 +281,7 @@ insert_query = sql.SQL("""
     ) VALUES (
         %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
         %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
     )
 """).format(sql.Identifier(TABLE_NAME))
 

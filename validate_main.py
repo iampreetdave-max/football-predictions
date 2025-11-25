@@ -13,6 +13,7 @@ import psycopg2
 from psycopg2 import sql
 from pathlib import Path
 import json
+import os
 warnings.filterwarnings('ignore')
 
 # ==================== API CONFIGURATION ====================
@@ -26,12 +27,13 @@ API_CONFIGS = [
 ]
 
 # ==================== DATABASE CONFIGURATION ====================
+
 DB_CONFIG = {
-    'host': 'winbets-db.postgres.database.azure.com',
-    'port': 5432,
-    'database': 'postgres',
-    'user': 'winbets',
-    'password': 'deeptanshu@123'
+    'host': os.getenv('DB_HOST'),
+    'port': int(os.getenv('DB_PORT', 5432)),
+    'database': os.getenv('DB_DATABASE'),
+    'user': os.getenv('DB_USER'),
+    'password': os.getenv('DB_PASSWORD')
 }
 
 TABLE_NAME = 'agility_soccer_v1'
@@ -292,7 +294,7 @@ for idx, row in predictions_to_validate.iterrows():
                         float(home_score),
                         float(away_score),
                         float(total_goals),
-                        'COMPLETE',
+                        'SETTLED',
                         profit_loss_ou,
                         profit_loss_ml,
                         match_id
@@ -306,7 +308,17 @@ for idx, row in predictions_to_validate.iterrows():
                     print(f"  → P/L O/U: ${profit_loss_ou:.2f} | P/L ML: ${profit_loss_ml:.2f}")
                     
                 else:
-                    print(f"⏳ {match_id}: Not complete (status: {status})")
+                    # Update incomplete matches to PENDING
+                    update_query = sql.SQL("""
+                        UPDATE {}
+                        SET status = %s, updated_at = CURRENT_TIMESTAMP
+                        WHERE match_id = %s
+                    """).format(sql.Identifier(TABLE_NAME))
+                    
+                    cursor.execute(update_query, ('PENDING', match_id))
+                    conn.commit()
+                    
+                    print(f"⏳ {match_id}: Not complete (status: {status}) → Set to PENDING")
                     failed_fetches += 1
             else:
                 print(f"⚠ {match_id}: No data")
@@ -325,8 +337,8 @@ for idx, row in predictions_to_validate.iterrows():
 print("\n" + "="*80)
 print("SUMMARY")
 print("="*80)
-print(f"✓ Successfully updated: {successful_updates} matches")
-print(f"✗ Failed/Pending: {failed_fetches} matches")
+print(f"✓ Successfully updated: {successful_updates} matches (SETTLED)")
+print(f"✗ Failed/Pending: {failed_fetches} matches (PENDING)")
 
 if successful_updates == 0:
     print(f"\n⚠️  WARNING: No matches were successfully validated")

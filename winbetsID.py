@@ -3,12 +3,14 @@ import pandas as pd
 from psycopg2 import Error
 
 # Database credentials
-db_config = {
-    'host': 'winbets-db.postgres.database.azure.com',
-    'port': 5432,
-    'database': 'postgres',
-    'user': 'winbets',
-    'password': 'deeptanshu@123'
+import os
+
+DB_CONFIG = {
+    'host': os.getenv('DB_HOST'),
+    'port': int(os.getenv('DB_PORT', 5432)),
+    'database': os.getenv('DB_DATABASE'),
+    'user': os.getenv('DB_USER'),
+    'password': os.getenv('DB_PASSWORD')
 }
 
 # Load CSV mapping file

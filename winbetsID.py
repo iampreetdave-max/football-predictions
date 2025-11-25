@@ -39,8 +39,10 @@ print(f"  - Teams: {len(team_name_lookup)}")
 print(f"  - Team IDs: {len(team_id_lookup)}")
 print(f"  - Leagues: {len(league_lookup)}")
 
+connection = None
+
 try:
-    connection = psycopg2.connect(**db_config)
+    connection = psycopg2.connect(**DB_CONFIG)
     cursor = connection.cursor()
     
     # Fetch all rows from database including WB columns
@@ -112,7 +114,8 @@ try:
     
 except Error as e:
     print(f"Error: {e}")
-    connection.rollback()
+    if connection:
+        connection.rollback()
 finally:
     if connection:
         cursor.close()

@@ -151,7 +151,18 @@ print(f"✓ All required columns present")
 # ==================== TRANSFORM DATA ====================
 print(f"\n[3/5] Transforming data for database...")
 
-db_data = pd.DataFrame()
+# Define exact column order matching INSERT statement (31 columns, NO id column)
+db_columns = [
+    'match_id', 'date', 'league', 'league_name', 'home_id', 'away_id', 'home_team', 'away_team',
+    'home_odds', 'away_odds', 'draw_odds', 'over_2_5_odds', 'under_2_5_odds',
+    'ctmcl', 'predicted_home_goals', 'predicted_away_goals', 'confidence', 'grade', 'delta',
+    'predicted_outcome', 'predicted_winner',
+    'status', 'data_source', 'confidence_category',
+    'actual_over_under', 'actual_winner', 'profit_loss_outcome', 'profit_loss_winner',
+    'actual_home_team_goals', 'actual_away_team_goals', 'actual_total_goals'
+]
+
+db_data = pd.DataFrame(index=df.index)
 
 # Map CSV columns to database columns
 db_data['match_id'] = df['match_id']
@@ -196,8 +207,12 @@ db_data['actual_home_team_goals'] = None
 db_data['actual_away_team_goals'] = None
 db_data['actual_total_goals'] = None
 
+# Reorder to match INSERT statement exactly (ensures column order consistency)
+db_data = db_data[db_columns]
+
 print(f"✓ Transformed {len(db_data)} records")
 print(f"  Fields mapped: {len(db_data.columns)}")
+print(f"  Column order verified: {len(db_data.columns) == len(db_columns)} (31 expected)")
 
 # Show league name mapping summary
 league_counts = db_data['league_name'].value_counts()
@@ -292,7 +307,13 @@ error_details = []
 for idx, row in new_data.iterrows():
     try:
         # Replace NaN with None for proper NULL handling
+        # Convert row to list in proper order (no id column)
         values = [None if pd.isna(v) else v for v in row.values]
+        
+        # Verify we have exactly 31 values
+        if len(values) != 31:
+            raise ValueError(f"Expected 31 columns, got {len(values)}")
+        
         cursor.execute(insert_query, values)
         inserted += 1
         

@@ -47,7 +47,7 @@ try:
     
     # Fetch all rows from database including WB columns
     select_query = """
-    SELECT id, home_team, away_team, home_id, away_id, league_name, 
+    SELECT match_id, home_team, away_team, home_id, away_id, league_name, 
            home_TeamName_Wb, away_TeamName_Wb, home_TeamId_Wb, away_TeamId_Wb, league_wb
     FROM agility_soccer_v1
     """
@@ -59,7 +59,7 @@ try:
     updated_count = 0
     
     for row in rows:
-        row_id, home_team, away_team, home_id, away_id, league_name, \
+        match_id, home_team, away_team, home_id, away_id, league_name, \
         home_TeamName_Wb, away_TeamName_Wb, home_TeamId_Wb, away_TeamId_Wb, league_wb = row
         
         updates = {}
@@ -104,8 +104,8 @@ try:
         # Update database if there are values to update
         if updates:
             set_clause = ", ".join([f"{key} = %s" for key in updates.keys()])
-            values = list(updates.values()) + [row_id]
-            update_query = f"UPDATE agility_soccer_v1 SET {set_clause} WHERE id = %s"
+            values = list(updates.values()) + [match_id]
+            update_query = f"UPDATE agility_soccer_v1 SET {set_clause} WHERE match_id = %s"
             cursor.execute(update_query, values)
             updated_count += 1
     

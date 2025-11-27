@@ -1,7 +1,12 @@
 """
-FIXED VALIDATION SCRIPT - CSV-BASED (Like the working validate_predictions.py)
+FIXED VALIDATION SCRIPT - CSV-BASED
 This script reads from CSV and validates match results
-Updates database: agility_football_pred
+Updates database: agility_soccer_v1
+
+FIXES APPLIED:
+1. ✓ Uses ctmcl_prediction column (not predicted_outcome which is numeric)
+2. ✓ Normalizes team names with .strip()
+3. ✓ Better error handling and logging
 """
 
 import pandas as pd
@@ -27,7 +32,6 @@ API_CONFIGS = [
 ]
 
 # ==================== DATABASE CONFIGURATION ====================
-
 DB_CONFIG = {
     'host': os.getenv('DB_HOST'),
     'port': int(os.getenv('DB_PORT', 5432)),
@@ -39,9 +43,11 @@ DB_CONFIG = {
 TABLE_NAME = 'agility_soccer_v1'
 
 print("\n" + "="*80)
-print("AGILITY FOOTBALL PREDICTIONS - CSV-BASED VALIDATION")
+print("AGILITY FOOTBALL PREDICTIONS - CSV-BASED VALIDATION (FIXED VERSION)")
 print("="*80)
 print(f"Timestamp: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}")
+print(f"\n⚠️  IMPORTANT: This is the FIXED version with correct column mapping")
+print(f"   Original issue: Was reading predicted_outcome (numeric) instead of ctmcl_prediction")
 
 # ==================== DATABASE CONNECTION ====================
 print("\n[1/5] Connecting to PostgreSQL Database...")
@@ -71,7 +77,7 @@ try:
     # Try different possible locations
     possible_paths = [
         csv_path,
-        Path('/mnt/user-data/uploads/best_match_predictions__8_.csv'),
+        Path('best_match_predictions.csv'),
         Path('/home/claude/best_match_predictions.csv'),
         Path(__file__).resolve().parent / 'best_match_predictions.csv'
     ]
@@ -96,32 +102,18 @@ try:
     # Verify required columns
     required_columns = [
         'match_id', 'date', 'home_team_name', 'away_team_name',
-        'predicted_outcome', 'outcome_label',
+        'ctmcl_prediction', 'outcome_label',
         'odds_ft_over25', 'odds_ft_under25',
         'odds_ft_1', 'odds_ft_x', 'odds_ft_2'
     ]
-    
-    # Map CSV columns to expected names if needed
-    column_mapping = {
-        'home_team': 'home_team_name',
-        'away_team': 'away_team_name',
-        'over_2_5_odds': 'odds_ft_over25',
-        'under_2_5_odds': 'odds_ft_under25',
-        'home_odds': 'odds_ft_1',
-        'draw_odds': 'odds_ft_x',
-        'away_odds': 'odds_ft_2',
-        'predicted_winner': 'outcome_label',
-        'ctmcl_prediction': 'predicted_outcome'
-    }
-    
-    for old_col, new_col in column_mapping.items():
-        if old_col in predictions_df.columns and new_col not in predictions_df.columns:
-            predictions_df[new_col] = predictions_df[old_col]
     
     missing_columns = [col for col in required_columns if col not in predictions_df.columns]
     if missing_columns:
         print(f"⚠️  Missing columns: {missing_columns}")
         print(f"Available columns: {list(predictions_df.columns)}")
+        # Don't exit - some columns might have alternate names
+    else:
+        print(f"✓ All required columns present")
     
 except Exception as e:
     print(f"✗ Error loading CSV: {e}")
@@ -205,9 +197,9 @@ failed_fetches = 0
 for idx, row in predictions_to_validate.iterrows():
     match_id = row['match_id']
     
-    # Get prediction data
-    predicted_ou = row.get('predicted_outcome', row.get('ctmcl_prediction', ''))
-    predicted_winner = row.get('outcome_label', row.get('predicted_winner', ''))
+    # FIXED: Read from ctmcl_prediction (correct column for O/U)
+    predicted_ou = str(row.get('ctmcl_prediction', '')).strip()
+    predicted_winner = str(row.get('outcome_label', '')).strip()
     
     # Get odds data with fallbacks
     odds_over = row.get('odds_ft_over25', row.get('over_2_5_odds', 0))
@@ -216,8 +208,9 @@ for idx, row in predictions_to_validate.iterrows():
     odds_away = row.get('odds_ft_2', row.get('away_odds', 0))
     odds_draw = row.get('odds_ft_x', row.get('draw_odds', 0))
     
-    home_team = row.get('home_team_name', row.get('home_team', ''))
-    away_team = row.get('away_team_name', row.get('away_team', ''))
+    # FIXED: Normalize team names with .strip()
+    home_team = str(row.get('home_team_name', row.get('home_team', ''))).strip()
+    away_team = str(row.get('away_team_name', row.get('away_team', ''))).strip()
     
     try:
         # Fetch match details using working config
@@ -245,7 +238,7 @@ for idx, row in predictions_to_validate.iterrows():
                     away_score = int(match_data.get('awayGoalCount', 0))
                     total_goals = home_score + away_score
                     
-                    # Determine winner
+                    # Determine winner - FIXED: Strip whitespace
                     if home_score > away_score:
                         actual_winner = home_team
                     elif away_score > home_score:
@@ -253,15 +246,18 @@ for idx, row in predictions_to_validate.iterrows():
                     else:
                         actual_winner = 'Draw'
                     
-                    # Determine O/U (based on 2.5)
+                    # Determine O/U (based on 2.5) - standardized format
                     actual_over_under = 'Over 2.5' if total_goals > 2.5 else 'Under 2.5'
+                    
+                    # FIXED: Normalize predicted_ou for comparison
+                    # predicted_ou should already be from ctmcl_prediction which has "Over 2.5" or "Under 2.5"
+                    predicted_ou_normalized = predicted_ou.lower().strip()
+                    actual_ou_normalized = actual_over_under.lower().strip()
                     
                     # Calculate P/L for Over/Under
                     # IF predicted == actual, use odds; ELSE -1.0
-                    predicted_ou_normalized = str(predicted_ou).strip()
-                    
-                    if predicted_ou_normalized == actual_over_under:
-                        if 'Over' in actual_over_under:
+                    if predicted_ou_normalized == actual_ou_normalized:
+                        if 'over' in actual_ou_normalized:
                             profit_loss_ou = round(odds_over - 1, 2)
                         else:  # Under
                             profit_loss_ou = round(odds_under - 1, 2)
@@ -312,7 +308,8 @@ for idx, row in predictions_to_validate.iterrows():
                     
                     print(f"✓ {match_id}: {home_team} {home_score}-{away_score} {away_team}")
                     print(f"  → Winner: {actual_winner} | O/U: {actual_over_under}")
-                    print(f"  → P/L O/U: ${profit_loss_ou:.2f} | P/L ML: ${profit_loss_ml:.2f}")
+                    print(f"  → Pred O/U: {predicted_ou} | Profit O/U: ${profit_loss_ou:.2f}")
+                    print(f"  → P/L ML: ${profit_loss_ml:.2f}")
                     
                 else:
                     # Update incomplete matches to PENDING
@@ -359,4 +356,9 @@ print("\n" + "="*80)
 print("✅ VALIDATION COMPLETE!")
 print("="*80)
 print(f"⏰ Completed at: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}")
+print("="*80)
+print(f"\n📊 KEY FIXES APPLIED:")
+print(f"   1. ✓ Now reads ctmcl_prediction (O/U text) instead of predicted_outcome (numeric)")
+print(f"   2. ✓ Team names normalized with .strip() for accurate comparisons")
+print(f"   3. ✓ Better error logging and messaging")
 print("="*80)

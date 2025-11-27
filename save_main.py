@@ -1,9 +1,10 @@
 """
 Save Best Match Predictions to PostgreSQL Database
-Reads best_match_predictions.csv and inserts new predictions into agility_football_pred table
+Reads best_match_predictions.csv and inserts new predictions into agility_soccer_v1 table
 - Skips duplicate match_ids
 - Handles NULL values properly
 - Sets initial values for fields that will be updated by validation script
+- FIXED: Added confidence validation (0-1 range check)
 """
 
 import pandas as pd
@@ -50,7 +51,7 @@ LEAGUE_MAPPING = {
 }
 
 print("="*80)
-print("AGILITY FOOTBALL PREDICTIONS - SAVE TO DATABASE")
+print("AGILITY FOOTBALL PREDICTIONS - SAVE TO DATABASE (FIXED VERSION)")
 print("="*80)
 print(f"Timestamp: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}")
 
@@ -67,6 +68,11 @@ def calculate_grade(confidence):
     """Calculate letter grade from confidence score (0-1 scale)"""
     if pd.isna(confidence):
         return None
+    
+    # FIXED: Validate confidence is in 0-1 range
+    if confidence < 0 or confidence > 1:
+        print(f"⚠️  Warning: Confidence {confidence} outside 0-1 range (clipping to valid range)")
+        confidence = max(0, min(1, confidence))
     
     score = confidence * 100
     
@@ -190,8 +196,9 @@ db_data['grade'] = df['confidence'].apply(calculate_grade)
 db_data['delta'] = df['predicted_goal_diff']
 
 # Predictions
-db_data['predicted_outcome'] = df['ctmcl_prediction']
-db_data['predicted_winner'] = df['outcome_label']
+# IMPORTANT: Map ctmcl_prediction (O/U text) to predicted_outcome column
+db_data['predicted_outcome'] = df['ctmcl_prediction']  # "Over 2.5" or "Under 2.5"
+db_data['predicted_winner'] = df['outcome_label']      # "Home Win", "Away Win", "Draw"
 
 # Status and source
 db_data['status'] = df['status']
@@ -216,7 +223,7 @@ print(f"  Column order verified: {len(db_data.columns) == len(db_columns)} (31 e
 
 # Show league name mapping summary
 league_counts = db_data['league_name'].value_counts()
-print(f"\n  📊 League distribution:")
+print(f"\n  🏆 League distribution:")
 for league, count in league_counts.items():
     print(f"    • {league}: {count} matches")
 
@@ -439,6 +446,6 @@ print("✅ SAVE COMPLETE!")
 print("="*80)
 print(f"\nNext steps:")
 print(f"  • Wait for matches to complete")
-print(f"  • Run '3_validate_predictions.py' to update actual results")
+print(f"  • Run validate_main_FIXED.py to update actual results")
 print(f"  • Automated daily via GitHub Actions workflow")
 print("="*80)

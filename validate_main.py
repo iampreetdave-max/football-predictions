@@ -257,20 +257,27 @@ for idx, row in predictions_to_validate.iterrows():
                     actual_over_under = 'Over 2.5' if total_goals > 2.5 else 'Under 2.5'
                     
                     # Calculate P/L for Over/Under
-                    if 'Over' in str(predicted_ou):
-                        profit_loss_ou = round(odds_over - 1, 2) if total_goals > 2.5 else -1.0
-                    else:
-                        profit_loss_ou = round(odds_under - 1, 2) if total_goals <= 2.5 else -1.0
+                    # IF predicted == actual, use odds; ELSE -1.0
+                    predicted_ou_normalized = str(predicted_ou).strip()
                     
-                    # Calculate P/L for Winner
-                    if predicted_winner == 'Home Win':
-                        profit_loss_ml = round(odds_home - 1, 2) if actual_winner == home_team else -1.0
-                    elif predicted_winner == 'Away Win':
-                        profit_loss_ml = round(odds_away - 1, 2) if actual_winner == away_team else -1.0
-                    elif predicted_winner == 'Draw':
-                        profit_loss_ml = round(odds_draw - 1, 2) if actual_winner == 'Draw' else -1.0
+                    if predicted_ou_normalized == actual_over_under:
+                        if 'Over' in actual_over_under:
+                            profit_loss_ou = round(odds_over - 1, 2)
+                        else:  # Under
+                            profit_loss_ou = round(odds_under - 1, 2)
                     else:
-                        profit_loss_ml = 0.0
+                        profit_loss_ou = -1.0
+                    
+                    # Calculate P/L for Moneyline (Winner)
+                    # IF predicted == actual, use odds; ELSE -1.0
+                    if predicted_winner == 'Home Win' and actual_winner == home_team:
+                        profit_loss_ml = round(odds_home - 1, 2)
+                    elif predicted_winner == 'Away Win' and actual_winner == away_team:
+                        profit_loss_ml = round(odds_away - 1, 2)
+                    elif predicted_winner == 'Draw' and actual_winner == 'Draw':
+                        profit_loss_ml = round(odds_draw - 1, 2)
+                    else:
+                        profit_loss_ml = -1.0
                     
                     # Update database
                     update_query = sql.SQL("""

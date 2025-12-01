@@ -1,6 +1,7 @@
 """
 Save Best Match Predictions to PostgreSQL Database
 Reads best_match_predictions.csv and inserts new predictions into agility_soccer_v1 table
+- Saves to BOTH databases (old credentials and new WINBETS credentials)
 - Skips duplicate match_ids
 - Handles NULL values properly
 - Sets initial values for fields that will be updated by validation script
@@ -16,12 +17,22 @@ from pathlib import Path
 import os
 
 # ==================== DATABASE CONFIGURATION ====================
+# Primary database (old credentials)
 DB_CONFIG = {
     'host': os.getenv('DB_HOST'),
     'port': int(os.getenv('DB_PORT', 5432)),
     'database': os.getenv('DB_DATABASE'),
     'user': os.getenv('DB_USER'),
     'password': os.getenv('DB_PASSWORD')
+}
+
+# Secondary database (new credentials - WINBETS)
+DB_CONFIG_WINBETS = {
+    'host': os.getenv('WINBETS_DB_HOST'),
+    'port': int(os.getenv('WINBETS_DB_PORT', 5432)),
+    'database': os.getenv('WINBETS_DB_DATABASE'),
+    'user': os.getenv('WINBETS_DB_USER'),
+    'password': os.getenv('WINBETS_DB_PASSWORD')
 }
 
 TABLE_NAME = 'agility_soccer_v1'
@@ -51,9 +62,10 @@ LEAGUE_MAPPING = {
 }
 
 print("="*80)
-print("AGILITY FOOTBALL PREDICTIONS - SAVE TO DATABASE (FIXED VERSION)")
+print("AGILITY FOOTBALL PREDICTIONS - SAVE TO DUAL DATABASES (FIXED VERSION)")
 print("="*80)
 print(f"Timestamp: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}")
+print(f"ℹ️  This version saves to BOTH old and new database credentials")
 
 # ==================== HELPER FUNCTIONS ====================
 def get_league_name(league_id):
@@ -98,7 +110,7 @@ def calculate_grade(confidence):
         return "D"
 
 # ==================== LOAD CSV DATA ====================
-print(f"\n[1/5] Loading CSV file: {CSV_FILE}")
+print(f"\n[1/6] Loading CSV file: {CSV_FILE}")
 try:
     # Try to find the CSV file in multiple locations
     csv_path = Path(CSV_FILE)
@@ -121,7 +133,7 @@ except Exception as e:
     sys.exit(1)
 
 # ==================== VERIFY REQUIRED COLUMNS ====================
-print(f"\n[2/5] Verifying required columns...")
+print(f"\n[2/6] Verifying required columns...")
 
 required_columns = {
     'match_id': 'Match ID',
@@ -155,7 +167,7 @@ if missing_cols:
 print(f"✓ All required columns present")
 
 # ==================== TRANSFORM DATA ====================
-print(f"\n[3/5] Transforming data for database...")
+print(f"\n[3/6] Transforming data for database...")
 
 # Define exact column order matching INSERT statement (31 columns, NO id column)
 db_columns = [
@@ -196,9 +208,8 @@ db_data['grade'] = df['confidence'].apply(calculate_grade)
 db_data['delta'] = df['predicted_goal_diff']
 
 # Predictions
-# IMPORTANT: Map ctmcl_prediction (O/U text) to predicted_outcome column
-db_data['predicted_outcome'] = df['ctmcl_prediction']  # "Over 2.5" or "Under 2.5"
-db_data['predicted_winner'] = df['outcome_label']      # "Home Win", "Away Win", "Draw"
+db_data['predicted_outcome'] = df['ctmcl_prediction']
+db_data['predicted_winner'] = df['outcome_label']
 
 # Status and source
 db_data['status'] = df['status']
@@ -214,7 +225,7 @@ db_data['actual_home_team_goals'] = None
 db_data['actual_away_team_goals'] = None
 db_data['actual_total_goals'] = None
 
-# Reorder to match INSERT statement exactly (ensures column order consistency)
+# Reorder to match INSERT statement exactly
 db_data = db_data[db_columns]
 
 print(f"✓ Transformed {len(db_data)} records")
@@ -227,225 +238,149 @@ print(f"\n  🏆 League distribution:")
 for league, count in league_counts.items():
     print(f"    • {league}: {count} matches")
 
-# Debug: Show first row mapping
-if len(db_data) > 0:
-    print(f"\n  Sample mapping (first record):")
-    first_row = db_data.iloc[0]
-    print(f"    match_id: {first_row['match_id']}")
-    print(f"    league: {first_row['league']}")
-    print(f"    league_name: {first_row['league_name']}")
-    print(f"    home_team: {first_row['home_team']}")
-    print(f"    away_team: {first_row['away_team']}")
-    print(f"    status: {first_row['status']}")
-    print(f"    confidence_category: {first_row['confidence_category']}")
-    print(f"    predicted_outcome: {first_row['predicted_outcome']}")
-    print(f"    predicted_winner: {first_row['predicted_winner']}")
-
-
-# ==================== CONNECT TO DATABASE ====================
-print(f"\n[4/5] Connecting to database...")
-try:
-    conn = psycopg2.connect(**DB_CONFIG)
-    cursor = conn.cursor()
-    print("✓ Connected to database successfully")
-    print(f"  Host: {DB_CONFIG['host']}")
-    print(f"  Database: {DB_CONFIG['database']}")
-except Exception as e:
-    print(f"✗ Connection error: {e}")
-    print(f"\nTroubleshooting:")
-    print(f"  • Check if database server is running")
-    print(f"  • Verify credentials are correct")
-    print(f"  • Check firewall/network settings")
-    sys.exit(1)
-
-# ==================== CHECK FOR EXISTING RECORDS ====================
-print(f"\nChecking for existing records...")
-try:
-    cursor.execute(sql.SQL("SELECT match_id FROM {}").format(sql.Identifier(TABLE_NAME)))
-    existing_ids = set([row[0] for row in cursor.fetchall()])
-    print(f"✓ Found {len(existing_ids)} existing records in database")
-except Exception as e:
-    print(f"✗ Error querying existing records: {e}")
-    cursor.close()
-    conn.close()
-    sys.exit(1)
-
-# Filter out existing records
-new_data = db_data[~db_data['match_id'].isin(existing_ids)]
-duplicate_count = len(db_data) - len(new_data)
-
-print(f"\n  Records breakdown:")
-print(f"    • Total in CSV: {len(db_data)}")
-print(f"    • Already in DB: {duplicate_count}")
-print(f"    • New to insert: {len(new_data)}")
-
-if len(new_data) == 0:
-    print("\n✓ All records already exist in database. Nothing to insert.")
-    cursor.close()
-    conn.close()
-    print("\n" + "="*80)
-    print("✅ SAVE COMPLETE - NO NEW RECORDS")
-    print("="*80)
-    sys.exit(0)
-
-# ==================== INSERT NEW RECORDS ====================
-print(f"\n[5/5] Inserting {len(new_data)} new records...")
-
-insert_query = sql.SQL("""
-    INSERT INTO {} (
-        match_id, date, league, league_name, home_id, away_id, home_team, away_team,
-        home_odds, away_odds, draw_odds, over_2_5_odds, under_2_5_odds,
-        ctmcl, predicted_home_goals, predicted_away_goals, confidence, grade, delta,
-        predicted_outcome, predicted_winner,
-        status, data_source, confidence_category,
-        actual_over_under, actual_winner, profit_loss_outcome, profit_loss_winner,
-        actual_home_team_goals, actual_away_team_goals, actual_total_goals
-    ) VALUES (
-        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
-    )
-""").format(sql.Identifier(TABLE_NAME))
-
-inserted = 0
-errors = 0
-error_details = []
-
-for idx, row in new_data.iterrows():
+# ==================== INSERT TO BOTH DATABASES ====================
+def insert_to_database(db_config, db_name, db_data):
+    """Insert data to a specific database"""
+    print(f"\n[4/6] Connecting to {db_name} database...")
+    
     try:
-        # Replace NaN with None for proper NULL handling
-        # Convert row to list in proper order (no id column)
-        values = [None if pd.isna(v) else v for v in row.values]
-        
-        # Verify we have exactly 31 values
-        if len(values) != 31:
-            raise ValueError(f"Expected 31 columns, got {len(values)}")
-        
-        cursor.execute(insert_query, values)
-        inserted += 1
-        
-        # Commit every 10 records for better safety
-        if inserted % 10 == 0:
-            conn.commit()
-            print(f"  Progress: {inserted}/{len(new_data)} records inserted and committed...")
-            
+        conn = psycopg2.connect(**db_config)
+        cursor = conn.cursor()
+        print(f"✓ Connected to {db_name}")
+        print(f"  Host: {db_config['host']}")
+        print(f"  Database: {db_config['database']}")
     except Exception as e:
-        errors += 1
-        error_msg = f"Match ID {row['match_id']}: {str(e)[:100]}"
-        error_details.append(error_msg)
-        print(f"  ⚠ Error: {error_msg}")
+        print(f"✗ Connection error: {e}")
+        return False
+
+    # Check for existing records
+    print(f"\nChecking for existing records in {db_name}...")
+    try:
+        cursor.execute(sql.SQL("SELECT match_id FROM {}").format(sql.Identifier(TABLE_NAME)))
+        existing_ids = set([row[0] for row in cursor.fetchall()])
+        print(f"✓ Found {len(existing_ids)} existing records")
+    except Exception as e:
+        print(f"✗ Error querying existing records: {e}")
+        cursor.close()
+        conn.close()
+        return False
+
+    # Filter out existing records
+    new_data = db_data[~db_data['match_id'].isin(existing_ids)]
+    duplicate_count = len(db_data) - len(new_data)
+
+    print(f"\n  Records breakdown:")
+    print(f"    • Total in CSV: {len(db_data)}")
+    print(f"    • Already in DB: {duplicate_count}")
+    print(f"    • New to insert: {len(new_data)}")
+
+    if len(new_data) == 0:
+        print(f"\n✓ All records already exist in {db_name}. Nothing to insert.")
+        cursor.close()
+        conn.close()
+        return True
+
+    # Insert new records
+    print(f"\n[5/6] Inserting {len(new_data)} new records to {db_name}...")
+
+    insert_query = sql.SQL("""
+        INSERT INTO {} (
+            match_id, date, league, league_name, home_id, away_id, home_team, away_team,
+            home_odds, away_odds, draw_odds, over_2_5_odds, under_2_5_odds,
+            ctmcl, predicted_home_goals, predicted_away_goals, confidence, grade, delta,
+            predicted_outcome, predicted_winner,
+            status, data_source, confidence_category,
+            actual_over_under, actual_winner, profit_loss_outcome, profit_loss_winner,
+            actual_home_team_goals, actual_away_team_goals, actual_total_goals
+        ) VALUES (
+            %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+            %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+            %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+        )
+    """).format(sql.Identifier(TABLE_NAME))
+
+    inserted = 0
+    errors = 0
+    error_details = []
+
+    for idx, row in new_data.iterrows():
+        try:
+            values = [None if pd.isna(v) else v for v in row.values]
+            
+            if len(values) != 31:
+                raise ValueError(f"Expected 31 columns, got {len(values)}")
+            
+            cursor.execute(insert_query, values)
+            inserted += 1
+            
+            if inserted % 10 == 0:
+                conn.commit()
+                print(f"  Progress: {inserted}/{len(new_data)} records inserted...")
+                
+        except Exception as e:
+            errors += 1
+            error_msg = f"Match ID {row['match_id']}: {str(e)[:100]}"
+            error_details.append(error_msg)
+            conn.rollback()
+
+    # Final commit
+    try:
+        conn.commit()
+        print(f"\n✓ Database commit successful to {db_name}")
+    except Exception as e:
+        print(f"\n✗ Error committing to {db_name}: {e}")
         conn.rollback()
 
-# Final commit
-try:
-    conn.commit()
-    print(f"\n✓ Database commit successful")
-except Exception as e:
-    print(f"\n✗ Error committing to database: {e}")
-    conn.rollback()
+    # Summary
+    print(f"\n" + "="*80)
+    print(f"INSERTION SUMMARY - {db_name}")
+    print("="*80)
+    print(f"✓ Successfully inserted: {inserted} records")
+    if errors > 0:
+        print(f"⚠ Errors encountered: {errors} records")
 
-# ==================== SUMMARY ====================
-print(f"\n" + "="*80)
-print("INSERTION SUMMARY")
+    # Verify database state
+    print(f"\nDatabase state in {db_name}:")
+    try:
+        cursor.execute(sql.SQL("SELECT COUNT(*) FROM {}").format(sql.Identifier(TABLE_NAME)))
+        total = cursor.fetchone()[0]
+        print(f"  Total records: {total}")
+    except Exception as e:
+        print(f"⚠ Could not retrieve database statistics: {e}")
+
+    cursor.close()
+    conn.close()
+    return True
+
+# ==================== EXECUTE INSERTS TO BOTH DATABASES ====================
+print("\n" + "="*80)
+print("DUAL DATABASE INSERT PROCESS")
 print("="*80)
-print(f"✓ Successfully inserted: {inserted} records")
-if errors > 0:
-    print(f"⚠ Errors encountered: {errors} records")
-    print(f"\nError details:")
-    for i, error in enumerate(error_details[:5], 1):
-        print(f"  {i}. {error}")
-    if len(error_details) > 5:
-        print(f"  ... and {len(error_details) - 5} more errors")
 
-# ==================== VERIFY DATABASE STATE ====================
-print(f"\n" + "="*80)
-print("DATABASE STATE")
+# Insert to primary (old) database
+success_primary = insert_to_database(DB_CONFIG, "PRIMARY (Old Credentials)", db_data)
+
+# Insert to secondary (new WINBETS) database
+success_winbets = insert_to_database(DB_CONFIG_WINBETS, "WINBETS (New Credentials)", db_data)
+
+# ==================== FINAL SUMMARY ====================
+print("\n" + "="*80)
+print("FINAL SUMMARY")
 print("="*80)
-
-try:
-    # Total records
-    cursor.execute(sql.SQL("SELECT COUNT(*) FROM {}").format(sql.Identifier(TABLE_NAME)))
-    total = cursor.fetchone()[0]
-    print(f"  Total records in database: {total}")
-    
-    # Records by league
-    cursor.execute(sql.SQL("""
-        SELECT league_name, COUNT(*) 
-        FROM {} 
-        GROUP BY league_name
-        ORDER BY COUNT(*) DESC
-    """).format(sql.Identifier(TABLE_NAME)))
-    
-    league_counts = cursor.fetchall()
-    if league_counts:
-        print(f"\n  Records by league:")
-        for league, count in league_counts:
-            print(f"    • {league}: {count}")
-    
-    # Records by status
-    cursor.execute(sql.SQL("""
-        SELECT status, COUNT(*) 
-        FROM {} 
-        GROUP BY status
-    """).format(sql.Identifier(TABLE_NAME)))
-    
-    status_counts = cursor.fetchall()
-    if status_counts:
-        print(f"\n  Records by status:")
-        for status, count in status_counts:
-            print(f"    • {status}: {count}")
-    
-    # Records by confidence category
-    cursor.execute(sql.SQL("""
-        SELECT confidence_category, COUNT(*) 
-        FROM {} 
-        GROUP BY confidence_category
-        ORDER BY 
-            CASE confidence_category 
-                WHEN 'High' THEN 1 
-                WHEN 'Medium' THEN 2 
-                WHEN 'Low' THEN 3 
-                ELSE 4 
-            END
-    """).format(sql.Identifier(TABLE_NAME)))
-    
-    confidence_counts = cursor.fetchall()
-    if confidence_counts:
-        print(f"\n  Records by confidence:")
-        for category, count in confidence_counts:
-            print(f"    • {category}: {count}")
-    
-    # Pending validations
-    cursor.execute(sql.SQL("""
-        SELECT COUNT(*) 
-        FROM {} 
-        WHERE actual_winner IS NULL
-    """).format(sql.Identifier(TABLE_NAME)))
-    
-    pending = cursor.fetchone()[0]
-    print(f"\n  Pending validation: {pending} records")
-    
-except Exception as e:
-    print(f"⚠ Could not retrieve database statistics: {e}")
-
-# ==================== FINAL COMMIT ====================
-print(f"\nEnsuring all changes are committed...")
-try:
-    conn.commit()
-    print("✓ Final commit successful - all data saved!")
-except Exception as e:
-    print(f"✗ Final commit error: {e}")
-
-# ==================== CLOSE CONNECTION ====================
-cursor.close()
-conn.close()
-print(f"✓ Database connection closed")
+if success_primary and success_winbets:
+    print("✅ SUCCESS! Data saved to BOTH databases")
+    print("  ✓ Primary database (old credentials)")
+    print("  ✓ WINBETS database (new credentials)")
+elif success_primary:
+    print("⚠️  PRIMARY database OK, but WINBETS database FAILED")
+elif success_winbets:
+    print("⚠️  WINBETS database OK, but PRIMARY database FAILED")
+else:
+    print("❌ Both databases FAILED")
 
 print("\n" + "="*80)
-print("✅ SAVE COMPLETE!")
-print("="*80)
-print(f"\nNext steps:")
-print(f"  • Wait for matches to complete")
-print(f"  • Run validate_main_FIXED.py to update actual results")
-print(f"  • Automated daily via GitHub Actions workflow")
+print("Next steps:")
+print("  • Wait for matches to complete")
+print("  • Run validate_main_DUAL_DB.py to update actual results")
+print("  • Data will be synced to both databases")
 print("="*80)

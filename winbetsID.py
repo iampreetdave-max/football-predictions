@@ -1,10 +1,16 @@
+"""
+DUAL DATABASE ID MAPPING SCRIPT
+Maps team IDs and league data between databases
+Updates BOTH: Primary database (old credentials) AND WINBETS database (new credentials)
+"""
+
 import psycopg2
 import pandas as pd
 from psycopg2 import Error
-
-# Database credentials
 import os
 
+# ==================== DATABASE CONFIGURATION ====================
+# Primary database (old credentials)
 DB_CONFIG = {
     'host': os.getenv('DB_HOST'),
     'port': int(os.getenv('DB_PORT', 5432)),
@@ -13,11 +19,33 @@ DB_CONFIG = {
     'password': os.getenv('DB_PASSWORD')
 }
 
-# Load CSV mapping file
-csv_path = 'map.csv'
-mapping_df = pd.read_csv(csv_path, encoding='utf-8-sig')
+# Secondary database (new credentials - WINBETS)
+DB_CONFIG_WINBETS = {
+    'host': os.getenv('WINBETS_DB_HOST'),
+    'port': int(os.getenv('WINBETS_DB_PORT', 5432)),
+    'database': os.getenv('WINBETS_DB_DATABASE'),
+    'user': os.getenv('WINBETS_DB_USER'),
+    'password': os.getenv('WINBETS_DB_PASSWORD')
+}
 
-# Create lookup dictionaries with league context to handle teams in multiple leagues
+TABLE_NAME = 'agility_soccer_v1'
+
+print("="*80)
+print("DUAL DATABASE ID MAPPING SCRIPT")
+print("="*80)
+
+# ==================== LOAD CSV MAPPING FILE ====================
+print("\n[1/4] Loading CSV mapping file...")
+
+try:
+    csv_path = 'map.csv'
+    mapping_df = pd.read_csv(csv_path, encoding='utf-8-sig')
+    print(f"✓ Loaded mapping file with {len(mapping_df)} team entries")
+except Exception as e:
+    print(f"✗ Error loading CSV: {e}")
+    exit(1)
+
+# Create lookup dictionaries
 team_name_lookup = {}
 team_id_lookup = {}
 league_lookup = {}
@@ -26,37 +54,60 @@ for _, row in mapping_df.iterrows():
     team_name_clean = row['TeamName_Agility'].strip()
     league_clean = row['League_Agility'].strip()
     
-    # Composite key: (team_id, league) and (team_name, league) for exact matching
     team_id_lookup[(row['TeamId_Agility'], league_clean)] = row['TeamId_Wb']
     team_name_lookup[(team_name_clean, league_clean)] = row['TeamName_Wb']
     
-    # Store league mapping
     if league_clean not in league_lookup:
         league_lookup[league_clean] = row['League_Wb']
 
-print("✓ CSV loaded. Created lookup dictionaries")
+print(f"✓ Created lookup dictionaries:")
 print(f"  - Teams: {len(team_name_lookup)}")
 print(f"  - Team IDs: {len(team_id_lookup)}")
 print(f"  - Leagues: {len(league_lookup)}")
 
-connection = None
-
-try:
-    connection = psycopg2.connect(**DB_CONFIG)
-    cursor = connection.cursor()
+# ==================== HELPER FUNCTION FOR DATABASE OPERATIONS ====================
+def process_database(db_config, db_name):
+    """Process ID mapping for a specific database"""
+    print(f"\n[2/4] Connecting to {db_name}...")
     
-    # Fetch all rows from database including WB columns
-    select_query = """
-    SELECT match_id, home_team, away_team, home_id, away_id, league_name, 
-           home_TeamName_Wb, away_TeamName_Wb, home_TeamId_Wb, away_TeamId_Wb, league_wb
-    FROM agility_soccer_v1
-    """
-    cursor.execute(select_query)
-    rows = cursor.fetchall()
+    connection = None
     
-    print(f"\n✓ Fetched {len(rows)} rows from database")
+    try:
+        connection = psycopg2.connect(**db_config)
+        cursor = connection.cursor()
+        print(f"✓ Connected to {db_name}")
+        print(f"  Host: {db_config['host']}")
+        print(f"  Database: {db_config['database']}")
+        
+    except Exception as e:
+        print(f"✗ Connection error: {e}")
+        return False
+    
+    # Fetch all rows from database
+    print(f"\n[3/4] Fetching records from {db_name}...")
+    
+    try:
+        select_query = """
+        SELECT match_id, home_team, away_team, home_id, away_id, league_name, 
+               home_TeamName_Wb, away_TeamName_Wb, home_TeamId_Wb, away_TeamId_Wb, league_wb
+        FROM agility_soccer_v1
+        """
+        cursor.execute(select_query)
+        rows = cursor.fetchall()
+        
+        print(f"✓ Fetched {len(rows)} rows from {db_name}")
+        
+    except Exception as e:
+        print(f"✗ Error fetching rows: {e}")
+        cursor.close()
+        connection.close()
+        return False
+    
+    # Process and update records
+    print(f"\n[4/4] Processing ID mappings for {db_name}...")
     
     updated_count = 0
+    error_count = 0
     
     for row in rows:
         match_id, home_team, away_team, home_id, away_id, league_name, \
@@ -103,21 +154,60 @@ try:
         
         # Update database if there are values to update
         if updates:
-            set_clause = ", ".join([f"{key} = %s" for key in updates.keys()])
-            values = list(updates.values()) + [match_id]
-            update_query = f"UPDATE agility_soccer_v1 SET {set_clause} WHERE match_id = %s"
-            cursor.execute(update_query, values)
-            updated_count += 1
+            try:
+                set_clause = ", ".join([f"{key} = %s" for key in updates.keys()])
+                values = list(updates.values()) + [match_id]
+                update_query = f"UPDATE agility_soccer_v1 SET {set_clause} WHERE match_id = %s"
+                cursor.execute(update_query, values)
+                updated_count += 1
+                
+            except Exception as e:
+                error_count += 1
+                print(f"⚠ Error updating match {match_id}: {str(e)[:50]}")
     
-    connection.commit()
-    print(f"\n✓ Updated {updated_count} rows successfully!")
-    
-except Error as e:
-    print(f"Error: {e}")
-    if connection:
+    # Commit changes
+    try:
+        connection.commit()
+        print(f"\n✓ Successfully updated {updated_count} rows in {db_name}")
+        if error_count > 0:
+            print(f"⚠ Errors encountered: {error_count} rows")
+        
+    except Exception as e:
+        print(f"✗ Commit error: {e}")
         connection.rollback()
-finally:
-    if connection:
         cursor.close()
         connection.close()
-        print("Database connection closed.")
+        return False
+    
+    # Close connection
+    cursor.close()
+    connection.close()
+    print(f"✓ {db_name} connection closed")
+    
+    return True
+
+# ==================== PROCESS BOTH DATABASES ====================
+print("\n" + "="*80)
+print("PROCESSING BOTH DATABASES")
+print("="*80)
+
+success_primary = process_database(DB_CONFIG, "PRIMARY (Old Credentials)")
+success_winbets = process_database(DB_CONFIG_WINBETS, "WINBETS (New Credentials)")
+
+# ==================== FINAL SUMMARY ====================
+print("\n" + "="*80)
+print("FINAL SUMMARY")
+print("="*80)
+
+if success_primary and success_winbets:
+    print("✅ SUCCESS! ID mapping completed for BOTH databases")
+    print("  ✓ Primary database (old credentials) updated")
+    print("  ✓ WINBETS database (new credentials) updated")
+elif success_primary:
+    print("⚠️  PRIMARY database OK, but WINBETS database FAILED")
+elif success_winbets:
+    print("⚠️  WINBETS database OK, but PRIMARY database FAILED")
+else:
+    print("❌ Both databases FAILED")
+
+print("\n" + "="*80)

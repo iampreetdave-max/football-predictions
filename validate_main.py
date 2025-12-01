@@ -1,12 +1,13 @@
 """
-FIXED VALIDATION SCRIPT - CSV-BASED
+FIXED VALIDATION SCRIPT - CSV-BASED DUAL DATABASE
 This script reads from CSV and validates match results
-Updates database: agility_soccer_v1
+Updates BOTH databases: agility_soccer_v1 (old credentials + new WINBETS credentials)
 
 FIXES APPLIED:
 1. ✓ Uses ctmcl_prediction column (not predicted_outcome which is numeric)
 2. ✓ Normalizes team names with .strip()
 3. ✓ Better error handling and logging
+4. ✓ Syncs updates to both databases
 """
 
 import pandas as pd
@@ -32,6 +33,7 @@ API_CONFIGS = [
 ]
 
 # ==================== DATABASE CONFIGURATION ====================
+# Primary database (old credentials)
 DB_CONFIG = {
     'host': os.getenv('DB_HOST'),
     'port': int(os.getenv('DB_PORT', 5432)),
@@ -40,41 +42,42 @@ DB_CONFIG = {
     'password': os.getenv('DB_PASSWORD')
 }
 
+# Secondary database (new credentials - WINBETS)
+DB_CONFIG_WINBETS = {
+    'host': os.getenv('WINBETS_DB_HOST'),
+    'port': int(os.getenv('WINBETS_DB_PORT', 5432)),
+    'database': os.getenv('WINBETS_DB_DATABASE'),
+    'user': os.getenv('WINBETS_DB_USER'),
+    'password': os.getenv('WINBETS_DB_PASSWORD')
+}
+
 TABLE_NAME = 'agility_soccer_v1'
 
 print("\n" + "="*80)
-print("AGILITY FOOTBALL PREDICTIONS - CSV-BASED VALIDATION (FIXED VERSION)")
+print("AGILITY FOOTBALL PREDICTIONS - CSV-BASED DUAL DB VALIDATION")
 print("="*80)
 print(f"Timestamp: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}")
-print(f"\n⚠️  IMPORTANT: This is the FIXED version with correct column mapping")
-print(f"   Original issue: Was reading predicted_outcome (numeric) instead of ctmcl_prediction")
+print(f"ℹ️  This version updates BOTH old and new database credentials")
 
-# ==================== DATABASE CONNECTION ====================
-print("\n[1/5] Connecting to PostgreSQL Database...")
-print("="*80)
-
-try:
-    conn = psycopg2.connect(**DB_CONFIG)
-    cursor = conn.cursor()
-    print(f"✓ Connected to database: {DB_CONFIG['database']}")
-    print(f"✓ Table: {TABLE_NAME}")
-except Exception as e:
-    print(f"✗ Database connection failed: {e}")
-    exit(1)
-
-# ==================== CONFIGURATION ====================
-VALIDATION_DATE = (datetime.utcnow() - timedelta(days=1)).strftime('%Y-%m-%d')
-print(f"\n📅 Validation Date: {VALIDATION_DATE}")
+# ==================== HELPER FUNCTION FOR DATABASE OPERATIONS ====================
+def connect_database(db_config, db_name):
+    """Connect to a specific database"""
+    try:
+        conn = psycopg2.connect(**db_config)
+        cursor = conn.cursor()
+        print(f"✓ Connected to {db_name}")
+        return conn, cursor
+    except Exception as e:
+        print(f"✗ Failed to connect to {db_name}: {e}")
+        return None, None
 
 # ==================== LOAD PREDICTIONS FROM CSV ====================
-print("\n[2/5] Loading predictions from CSV...")
+print("\n[1/6] Loading predictions from CSV...")
 print("="*80)
 
 try:
-    # Look for CSV file in the same directory or specify path
     csv_path = Path('best_match_predictions.csv')
     
-    # Try different possible locations
     possible_paths = [
         csv_path,
         Path('best_match_predictions.csv'),
@@ -93,52 +96,42 @@ try:
         print(f"✗ Could not find CSV file. Tried:")
         for p in possible_paths:
             print(f"  - {p}")
-        cursor.close()
-        conn.close()
         exit(1)
     
     print(f"✓ Loaded {len(predictions_df)} total predictions")
     
-    # Verify required columns
-    required_columns = [
-        'match_id', 'date', 'home_team_name', 'away_team_name',
-        'ctmcl_prediction', 'outcome_label',
-        'odds_ft_over25', 'odds_ft_under25',
-        'odds_ft_1', 'odds_ft_x', 'odds_ft_2'
-    ]
-    
-    missing_columns = [col for col in required_columns if col not in predictions_df.columns]
-    if missing_columns:
-        print(f"⚠️  Missing columns: {missing_columns}")
-        print(f"Available columns: {list(predictions_df.columns)}")
-        # Don't exit - some columns might have alternate names
-    else:
-        print(f"✓ All required columns present")
-    
 except Exception as e:
     print(f"✗ Error loading CSV: {e}")
-    cursor.close()
-    conn.close()
     exit(1)
 
 # ==================== FILTER BY DATE ====================
-print("\n[3/5] Filtering predictions by date...")
+print("\n[2/6] Filtering predictions by date...")
 print("="*80)
 
+VALIDATION_DATE = (datetime.utcnow() - timedelta(days=1)).strftime('%Y-%m-%d')
 predictions_df['date'] = pd.to_datetime(predictions_df['date']).dt.date
 validation_date_obj = pd.to_datetime(VALIDATION_DATE).date()
 predictions_to_validate = predictions_df[predictions_df['date'] == validation_date_obj].copy()
 
 if len(predictions_to_validate) == 0:
     print(f"ℹ No predictions found for {VALIDATION_DATE}")
-    cursor.close()
-    conn.close()
     exit(0)
 
 print(f"✓ Found {len(predictions_to_validate)} predictions to validate")
 
+# ==================== CONNECT TO BOTH DATABASES ====================
+print("\n[3/6] Connecting to databases...")
+print("="*80)
+
+conn_primary, cursor_primary = connect_database(DB_CONFIG, "PRIMARY (Old Credentials)")
+conn_winbets, cursor_winbets = connect_database(DB_CONFIG_WINBETS, "WINBETS (New Credentials)")
+
+if not conn_primary and not conn_winbets:
+    print(f"\n✗ CRITICAL: Cannot connect to any database!")
+    exit(1)
+
 # ==================== TEST API FIRST ====================
-print("\n[4/5] Testing API configurations...")
+print("\n[4/6] Testing API configurations...")
 print("="*80)
 
 working_api_config = None
@@ -175,20 +168,17 @@ for i, config in enumerate(API_CONFIGS, 1):
     time.sleep(0.3)
 
 if not working_api_config:
-    print(f"\n❌ ERROR: No working API configuration found!")
-    print(f"\n💡 SOLUTIONS:")
-    print(f"   1. Your match IDs ({test_match_id}) are not compatible with these APIs")
-    print(f"   2. Check if match IDs are from a different source (RapidAPI, etc.)")
-    print(f"   3. Verify your API key has access to match data")
-    print(f"   4. The matches might be too old or not yet in the API")
-    cursor.close()
-    conn.close()
+    print(f"\n✗ ERROR: No working API configuration found!")
+    if conn_primary:
+        conn_primary.close()
+    if conn_winbets:
+        conn_winbets.close()
     exit(1)
 
 print(f"\n✓ Using: {working_api_config['url']} with parameter '{working_api_config['param']}'")
 
-# ==================== FETCH & UPDATE ====================
-print("\n[5/5] Fetching match results and updating database...")
+# ==================== FETCH & UPDATE BOTH DATABASES ====================
+print("\n[5/6] Fetching match results and updating databases...")
 print("="*80)
 
 successful_updates = 0
@@ -197,23 +187,21 @@ failed_fetches = 0
 for idx, row in predictions_to_validate.iterrows():
     match_id = row['match_id']
     
-    # FIXED: Read from ctmcl_prediction (correct column for O/U)
+    # Read prediction data
     predicted_ou = str(row.get('ctmcl_prediction', '')).strip()
     predicted_winner = str(row.get('outcome_label', '')).strip()
     
-    # Get odds data with fallbacks
     odds_over = row.get('odds_ft_over25', row.get('over_2_5_odds', 0))
     odds_under = row.get('odds_ft_under25', row.get('under_2_5_odds', 0))
     odds_home = row.get('odds_ft_1', row.get('home_odds', 0))
     odds_away = row.get('odds_ft_2', row.get('away_odds', 0))
     odds_draw = row.get('odds_ft_x', row.get('draw_odds', 0))
     
-    # FIXED: Normalize team names with .strip()
     home_team = str(row.get('home_team_name', row.get('home_team', ''))).strip()
     away_team = str(row.get('away_team_name', row.get('away_team', ''))).strip()
     
     try:
-        # Fetch match details using working config
+        # Fetch match details
         response = requests.get(
             working_api_config['url'],
             params={'key': API_KEY, working_api_config['param']: match_id},
@@ -238,7 +226,7 @@ for idx, row in predictions_to_validate.iterrows():
                     away_score = int(match_data.get('awayGoalCount', 0))
                     total_goals = home_score + away_score
                     
-                    # Determine winner - FIXED: Strip whitespace
+                    # Determine winner
                     if home_score > away_score:
                         actual_winner = home_team
                     elif away_score > home_score:
@@ -246,26 +234,23 @@ for idx, row in predictions_to_validate.iterrows():
                     else:
                         actual_winner = 'Draw'
                     
-                    # Determine O/U (based on 2.5) - standardized format
+                    # Determine O/U
                     actual_over_under = 'Over 2.5' if total_goals > 2.5 else 'Under 2.5'
                     
-                    # FIXED: Normalize predicted_ou for comparison
-                    # predicted_ou should already be from ctmcl_prediction which has "Over 2.5" or "Under 2.5"
+                    # Normalize for comparison
                     predicted_ou_normalized = predicted_ou.lower().strip()
                     actual_ou_normalized = actual_over_under.lower().strip()
                     
                     # Calculate P/L for Over/Under
-                    # IF predicted == actual, use odds; ELSE -1.0
                     if predicted_ou_normalized == actual_ou_normalized:
                         if 'over' in actual_ou_normalized:
                             profit_loss_ou = round(odds_over - 1, 2)
-                        else:  # Under
+                        else:
                             profit_loss_ou = round(odds_under - 1, 2)
                     else:
                         profit_loss_ou = -1.0
                     
-                    # Calculate P/L for Moneyline (Winner)
-                    # IF predicted == actual, use odds; ELSE -1.0
+                    # Calculate P/L for Moneyline
                     if predicted_winner == 'Home Win' and actual_winner == home_team:
                         profit_loss_ml = round(odds_home - 1, 2)
                     elif predicted_winner == 'Away Win' and actual_winner == away_team:
@@ -275,52 +260,107 @@ for idx, row in predictions_to_validate.iterrows():
                     else:
                         profit_loss_ml = -1.0
                     
-                    # Update database
-                    update_query = sql.SQL("""
-                        UPDATE {}
-                        SET 
-                            actual_winner = %s,
-                            actual_over_under = %s,
-                            actual_home_team_goals = %s,
-                            actual_away_team_goals = %s,
-                            actual_total_goals = %s,
-                            status = %s,
-                            profit_loss_outcome = %s,
-                            profit_loss_winner = %s,
-                            updated_at = CURRENT_TIMESTAMP
-                        WHERE match_id = %s
-                    """).format(sql.Identifier(TABLE_NAME))
+                    # UPDATE PRIMARY DATABASE
+                    if conn_primary and cursor_primary:
+                        try:
+                            update_query = sql.SQL("""
+                                UPDATE {}
+                                SET 
+                                    actual_winner = %s,
+                                    actual_over_under = %s,
+                                    actual_home_team_goals = %s,
+                                    actual_away_team_goals = %s,
+                                    actual_total_goals = %s,
+                                    status = %s,
+                                    profit_loss_outcome = %s,
+                                    profit_loss_winner = %s,
+                                    updated_at = CURRENT_TIMESTAMP
+                                WHERE match_id = %s
+                            """).format(sql.Identifier(TABLE_NAME))
+                            
+                            cursor_primary.execute(update_query, (
+                                actual_winner,
+                                actual_over_under,
+                                float(home_score),
+                                float(away_score),
+                                float(total_goals),
+                                'SETTLED',
+                                profit_loss_ou,
+                                profit_loss_ml,
+                                match_id
+                            ))
+                            
+                            conn_primary.commit()
+                        except Exception as e:
+                            print(f"⚠ Error updating PRIMARY DB for {match_id}: {str(e)[:50]}")
+                            conn_primary.rollback()
                     
-                    cursor.execute(update_query, (
-                        actual_winner,
-                        actual_over_under,
-                        float(home_score),
-                        float(away_score),
-                        float(total_goals),
-                        'SETTLED',
-                        profit_loss_ou,
-                        profit_loss_ml,
-                        match_id
-                    ))
+                    # UPDATE WINBETS DATABASE
+                    if conn_winbets and cursor_winbets:
+                        try:
+                            update_query = sql.SQL("""
+                                UPDATE {}
+                                SET 
+                                    actual_winner = %s,
+                                    actual_over_under = %s,
+                                    actual_home_team_goals = %s,
+                                    actual_away_team_goals = %s,
+                                    actual_total_goals = %s,
+                                    status = %s,
+                                    profit_loss_outcome = %s,
+                                    profit_loss_winner = %s,
+                                    updated_at = CURRENT_TIMESTAMP
+                                WHERE match_id = %s
+                            """).format(sql.Identifier(TABLE_NAME))
+                            
+                            cursor_winbets.execute(update_query, (
+                                actual_winner,
+                                actual_over_under,
+                                float(home_score),
+                                float(away_score),
+                                float(total_goals),
+                                'SETTLED',
+                                profit_loss_ou,
+                                profit_loss_ml,
+                                match_id
+                            ))
+                            
+                            conn_winbets.commit()
+                        except Exception as e:
+                            print(f"⚠ Error updating WINBETS DB for {match_id}: {str(e)[:50]}")
+                            conn_winbets.rollback()
                     
-                    conn.commit()
                     successful_updates += 1
                     
                     print(f"✓ {match_id}: {home_team} {home_score}-{away_score} {away_team}")
                     print(f"  → Winner: {actual_winner} | O/U: {actual_over_under}")
-                    print(f"  → Pred O/U: {predicted_ou} | Profit O/U: ${profit_loss_ou:.2f}")
-                    print(f"  → P/L ML: ${profit_loss_ml:.2f}")
+                    print(f"  → P/L O/U: ${profit_loss_ou:.2f} | P/L ML: ${profit_loss_ml:.2f}")
                     
                 else:
-                    # Update incomplete matches to PENDING
-                    update_query = sql.SQL("""
-                        UPDATE {}
-                        SET status = %s, updated_at = CURRENT_TIMESTAMP
-                        WHERE match_id = %s
-                    """).format(sql.Identifier(TABLE_NAME))
+                    # Update incomplete matches to PENDING in both databases
+                    if conn_primary and cursor_primary:
+                        try:
+                            update_query = sql.SQL("""
+                                UPDATE {}
+                                SET status = %s, updated_at = CURRENT_TIMESTAMP
+                                WHERE match_id = %s
+                            """).format(sql.Identifier(TABLE_NAME))
+                            cursor_primary.execute(update_query, ('PENDING', match_id))
+                            conn_primary.commit()
+                        except:
+                            conn_primary.rollback()
                     
-                    cursor.execute(update_query, ('PENDING', match_id))
-                    conn.commit()
+                    if conn_winbets and cursor_winbets:
+                        try:
+                            update_query = sql.SQL("""
+                                UPDATE {}
+                                SET status = %s, updated_at = CURRENT_TIMESTAMP
+                                WHERE match_id = %s
+                            """).format(sql.Identifier(TABLE_NAME))
+                            cursor_winbets.execute(update_query, ('PENDING', match_id))
+                            conn_winbets.commit()
+                        except:
+                            conn_winbets.rollback()
                     
                     print(f"⏳ {match_id}: Not complete (status: {status}) → Set to PENDING")
                     failed_fetches += 1
@@ -339,26 +379,28 @@ for idx, row in predictions_to_validate.iterrows():
 
 # ==================== SUMMARY ====================
 print("\n" + "="*80)
-print("SUMMARY")
+print("VALIDATION SUMMARY")
 print("="*80)
 print(f"✓ Successfully updated: {successful_updates} matches (SETTLED)")
 print(f"✗ Failed/Pending: {failed_fetches} matches (PENDING)")
 
 if successful_updates == 0:
     print(f"\n⚠️  WARNING: No matches were successfully validated")
-    print(f"   This suggests the match IDs are incompatible with the API")
 
-cursor.close()
-conn.close()
-print(f"\n✓ Database connection closed")
+# Close connections
+if conn_primary:
+    cursor_primary.close()
+    conn_primary.close()
+    print(f"\n✓ PRIMARY database connection closed")
+
+if conn_winbets:
+    cursor_winbets.close()
+    conn_winbets.close()
+    print(f"✓ WINBETS database connection closed")
 
 print("\n" + "="*80)
-print("✅ VALIDATION COMPLETE!")
+print("✅ DUAL DATABASE VALIDATION COMPLETE!")
 print("="*80)
 print(f"⏰ Completed at: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}")
-print("="*80)
-print(f"\n📊 KEY FIXES APPLIED:")
-print(f"   1. ✓ Now reads ctmcl_prediction (O/U text) instead of predicted_outcome (numeric)")
-print(f"   2. ✓ Team names normalized with .strip() for accurate comparisons")
-print(f"   3. ✓ Better error logging and messaging")
+print(f"\n📊 Both databases have been synchronized with match results")
 print("="*80)

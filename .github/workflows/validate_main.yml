@@ -1,7 +1,7 @@
 name: validate main
 on:
   schedule:
-    # Runs at 00:00 UTC every day (adjust time as needed)
+    # Runs at 5 AM UTC every day
     - cron: '0 5 * * *'
   workflow_dispatch: # Allows manual trigger from GitHub UI
 jobs:
@@ -14,6 +14,11 @@ jobs:
       DB_DATABASE: ${{ secrets.DB_DATABASE }}
       DB_USER: ${{ secrets.DB_USER }}
       DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+      WINBETS_DB_HOST: ${{ secrets.WINBETS_DB_HOST }}
+      WINBETS_DB_PORT: ${{ secrets.WINBETS_DB_PORT }}
+      WINBETS_DB_DATABASE: ${{ secrets.WINBETS_DB_DATABASE }}
+      WINBETS_DB_USER: ${{ secrets.WINBETS_DB_USER }}
+      WINBETS_DB_PASSWORD: ${{ secrets.WINBETS_DB_PASSWORD }}
     
     steps:
     - name: Checkout repository
@@ -30,4 +35,4 @@ jobs:
         if [ -f req.txt ]; then pip install -r req.txt; fi
     
     - name: Run Python script
-      run: python validate_main.py
+      run: python validate_main_DUAL_DB.py

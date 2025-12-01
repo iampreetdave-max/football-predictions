@@ -35,4 +35,4 @@ jobs:
         if [ -f req.txt ]; then pip install -r req.txt; fi
     
     - name: Run Python script
-      run: python winbetsID_DUAL_DB.py
+      run: python winbetsID.py.py

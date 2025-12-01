@@ -35,4 +35,4 @@ jobs:
         if [ -f req.txt ]; then pip install -r req.txt; fi
     
     - name: Run Python script
-      run: python save_main_DUAL_DB.py
+      run: python save_main.py

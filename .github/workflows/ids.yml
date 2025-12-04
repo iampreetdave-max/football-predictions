@@ -36,3 +36,6 @@ jobs:
     
     - name: Run Python script
       run: python winbetsID.py
+
+    - name: Run ML_grade
+      run: python ml_grade.py

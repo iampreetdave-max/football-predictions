@@ -23,14 +23,14 @@ from datetime import datetime
 # ============================================================================
 # CONFIGURATION
 # ============================================================================
-
+import os
 # Database credentials
 DB_CONFIG = {
-    "host": "winbets-predictions.postgres.database.azure.com",
-    "port": 5432,
-    "database": "postgres",
-    "user": "winbets",
-    "password": "Constantinople@1900"
+    'host': os.getenv('DB_HOST'),
+    'port': int(os.getenv('DB_PORT', 5432)),
+    'database': os.getenv('DB_DATABASE'),
+    'user': os.getenv('DB_USER'),
+    'password': os.getenv('DB_PASSWORD')
 }
 
 TABLE_NAME = "agility_soccer_v1"

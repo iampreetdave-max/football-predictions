@@ -92,21 +92,21 @@ df = new_matches_df
 print("\n[3/7] Loading trained models and scaler...")
 
 try:
-    ridge_home_model = joblib.load('ridge_home_model.pkl')
+    ridge_home_model = joblib.load('home_model.pkl')
     print("✓ Home goals model loaded")
 except Exception as e:
     print(f"✗ Error loading home model: {e}")
     exit(1)
 
 try:
-    ridge_away_model = joblib.load('ridge_away_model.pkl')
+    ridge_away_model = joblib.load('away_model.pkl')
     print("✓ Away goals model loaded")
 except Exception as e:
     print(f"✗ Error loading away model: {e}")
     exit(1)
 
 try:
-    scaler = joblib.load('scaler.pkl')
+    scaler = joblib.load('scaler_new.pkl')
     print("✓ Feature scaler loaded")
 except Exception as e:
     print(f"✗ Error loading scaler: {e}")
@@ -420,4 +420,5 @@ print("  ✓ Automatic cleanup of old predictions")
 print("  ✓ Profit calculations removed")
 
 print("\n" + "="*80)
+
 

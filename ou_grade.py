@@ -17,7 +17,7 @@ from psycopg2.extras import execute_batch
 import numpy as np
 import logging
 from datetime import datetime
-
+import os
 # ============================================================================
 # CONFIGURATION
 # ============================================================================

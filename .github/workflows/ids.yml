@@ -39,3 +39,7 @@ jobs:
 
     - name: Run ML_grade
       run: python ml_grade.py
+
+      
+    - name: Run OU_grade
+      run: python ou_grade.py

@@ -11,6 +11,9 @@ on:
 jobs:
   generate-predictions:
     runs-on: ubuntu-latest
+
+    env:
+      FOOTYSTATSAPI: ${{ secrets.FOOTYSTATSAPI }}
     
     steps:
     - name: Checkout repository

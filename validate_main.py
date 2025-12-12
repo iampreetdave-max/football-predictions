@@ -1,13 +1,15 @@
 """
-FIXED VALIDATION SCRIPT - CSV-BASED DUAL DATABASE
-This script reads from CSV and validates match results
+FIXED VALIDATION SCRIPT - DATABASE-BASED DUAL DATABASE
+This script reads PENDING match_ids from PRIMARY database and validates match results
 Updates BOTH databases: agility_soccer_v1 (old credentials + new WINBETS credentials)
 
 FIXES APPLIED:
-1. ✓ Uses ctmcl_prediction column (not predicted_outcome which is numeric)
-2. ✓ Normalizes team names with .strip()
-3. ✓ Better error handling and logging
-4. ✓ Syncs updates to both databases
+1. ✓ Fetches match_ids from PRIMARY database WHERE status = 'PENDING'
+2. ✓ Converts numeric(10,2) match_id to integer format
+3. ✓ Uses ctmcl_prediction column (not predicted_outcome which is numeric)
+4. ✓ Normalizes team names with .strip()
+5. ✓ Better error handling and logging
+6. ✓ Syncs updates to both databases
 """
 
 import pandas as pd
@@ -54,10 +56,11 @@ DB_CONFIG_WINBETS = {
 TABLE_NAME = 'agility_soccer_v1'
 
 print("\n" + "="*80)
-print("AGILITY FOOTBALL PREDICTIONS - CSV-BASED DUAL DB VALIDATION")
+print("AGILITY FOOTBALL PREDICTIONS - DATABASE-BASED DUAL DB VALIDATION")
 print("="*80)
 print(f"Timestamp: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}")
-print(f"ℹ️  This version updates BOTH old and new database credentials")
+print(f"ℹ️  This version fetches PENDING match_ids from PRIMARY database")
+print(f"ℹ️  Updates BOTH old and new database credentials")
 
 # ==================== HELPER FUNCTION FOR DATABASE OPERATIONS ====================
 def connect_database(db_config, db_name):
@@ -71,67 +74,69 @@ def connect_database(db_config, db_name):
         print(f"✗ Failed to connect to {db_name}: {e}")
         return None, None
 
-# ==================== LOAD PREDICTIONS FROM CSV ====================
-print("\n[1/6] Loading predictions from CSV...")
+# ==================== CONNECT TO PRIMARY DATABASE & FETCH PENDING MATCH_IDS ====================
+print("\n[1/6] Connecting to PRIMARY database and fetching PENDING match_ids...")
 print("="*80)
 
 try:
-    csv_path = Path('best_match_predictions.csv')
+    conn_primary, cursor_primary = connect_database(DB_CONFIG, "PRIMARY (Old Credentials)")
     
-    possible_paths = [
-        csv_path,
-        Path('best_match_predictions.csv'),
-        Path('/home/claude/best_match_predictions.csv'),
-        Path(__file__).resolve().parent / 'best_match_predictions.csv'
-    ]
-    
-    predictions_df = None
-    for path in possible_paths:
-        if path.exists():
-            predictions_df = pd.read_csv(path)
-            print(f"✓ Loaded CSV from: {path}")
-            break
-    
-    if predictions_df is None:
-        print(f"✗ Could not find CSV file. Tried:")
-        for p in possible_paths:
-            print(f"  - {p}")
+    if not conn_primary or not cursor_primary:
+        print(f"\n✗ CRITICAL: Cannot connect to PRIMARY database!")
         exit(1)
     
-    print(f"✓ Loaded {len(predictions_df)} total predictions")
+    # Fetch all PENDING match_ids from database
+    fetch_query = sql.SQL("""
+        SELECT match_id, date, home_team, away_team, 
+               ctmcl_prediction, outcome_label,
+               odds_ft_over25, odds_ft_under25,
+               odds_ft_1, odds_ft_x, odds_ft_2
+        FROM {}
+        WHERE status = %s
+        ORDER BY date DESC
+    """).format(sql.Identifier(TABLE_NAME))
+    
+    cursor_primary.execute(fetch_query, ('PENDING',))
+    rows = cursor_primary.fetchall()
+    
+    if len(rows) == 0:
+        print(f"ℹ No PENDING predictions found in database")
+        conn_primary.close()
+        exit(0)
+    
+    # Get column names from cursor description
+    column_names = [desc[0] for desc in cursor_primary.description]
+    
+    # Convert to DataFrame
+    predictions_df = pd.DataFrame(rows, columns=column_names)
+    
+    # Convert numeric(10,2) match_id to integer
+    predictions_df['match_id'] = predictions_df['match_id'].astype(float).astype(int)
+    
+    print(f"✓ Fetched {len(predictions_df)} PENDING predictions from database")
+    print(f"✓ Converted match_id from numeric(10,2) to integer format")
+    
+    # Prepare data for validation
+    predictions_to_validate = predictions_df.copy()
     
 except Exception as e:
-    print(f"✗ Error loading CSV: {e}")
+    print(f"✗ Error fetching from database: {e}")
+    if conn_primary:
+        conn_primary.close()
     exit(1)
 
-# ==================== FILTER BY DATE ====================
-print("\n[2/6] Filtering predictions by date...")
+# ==================== CONNECT TO WINBETS DATABASE ====================
+print("\n[2/6] Connecting to WINBETS database...")
 print("="*80)
 
-VALIDATION_DATE = (datetime.utcnow() - timedelta(days=1)).strftime('%Y-%m-%d')
-predictions_df['date'] = pd.to_datetime(predictions_df['date']).dt.date
-validation_date_obj = pd.to_datetime(VALIDATION_DATE).date()
-predictions_to_validate = predictions_df[predictions_df['date'] == validation_date_obj].copy()
-
-if len(predictions_to_validate) == 0:
-    print(f"ℹ No predictions found for {VALIDATION_DATE}")
-    exit(0)
-
-print(f"✓ Found {len(predictions_to_validate)} predictions to validate")
-
-# ==================== CONNECT TO BOTH DATABASES ====================
-print("\n[3/6] Connecting to databases...")
-print("="*80)
-
-conn_primary, cursor_primary = connect_database(DB_CONFIG, "PRIMARY (Old Credentials)")
 conn_winbets, cursor_winbets = connect_database(DB_CONFIG_WINBETS, "WINBETS (New Credentials)")
 
-if not conn_primary and not conn_winbets:
-    print(f"\n✗ CRITICAL: Cannot connect to any database!")
-    exit(1)
+if not conn_winbets:
+    print(f"\n⚠️  Warning: WINBETS database connection failed")
+    print(f"ℹ️  Will continue with PRIMARY database only")
 
 # ==================== TEST API FIRST ====================
-print("\n[4/6] Testing API configurations...")
+print("\n[3/6] Testing API configurations...")
 print("="*80)
 
 working_api_config = None
@@ -178,7 +183,7 @@ if not working_api_config:
 print(f"\n✓ Using: {working_api_config['url']} with parameter '{working_api_config['param']}'")
 
 # ==================== FETCH & UPDATE BOTH DATABASES ====================
-print("\n[5/6] Fetching match results and updating databases...")
+print("\n[4/6] Fetching match results and updating databases...")
 print("="*80)
 
 successful_updates = 0
@@ -197,8 +202,8 @@ for idx, row in predictions_to_validate.iterrows():
     odds_away = row.get('odds_ft_2', row.get('away_odds', 0))
     odds_draw = row.get('odds_ft_x', row.get('draw_odds', 0))
     
-    home_team = str(row.get('home_team_name', row.get('home_team', ''))).strip()
-    away_team = str(row.get('away_team_name', row.get('away_team', ''))).strip()
+    home_team = str(row.get('home_team', '')).strip()
+    away_team = str(row.get('away_team', '')).strip()
     
     try:
         # Fetch match details

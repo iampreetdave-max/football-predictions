@@ -193,8 +193,8 @@ for idx, row in predictions_to_validate.iterrows():
     match_id = row['match_id']
     
     # Read prediction data
-    predicted_ou = str(row.get('ctmcl_prediction', '')).strip()
-    predicted_winner = str(row.get('outcome_label', '')).strip()
+    predicted_ou = str(row.get('predicted_outcome', '')).strip()
+    predicted_winner = str(row.get('predicted_winner', '')).strip()
     
     odds_over = row.get('odds_ft_over25', row.get('over_2_5_odds', 0))
     odds_under = row.get('odds_ft_under25', row.get('under_2_5_odds', 0))

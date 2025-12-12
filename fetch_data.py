@@ -3,8 +3,8 @@ import requests
 import json
 import time
 import numpy as np
-
-API_KEY = "633379bdd5c4c3eb26919d8570866801e1c07f399197ba8c5311446b8ea77a49"
+import os
+API_KEY = os.getenv("FOOTYSTATSAPI")
 API_BASE_URL = "https://api.football-data-api.com/lastx"
 API_LEAGUE_URL = "https://api.football-data-api.com/league-season"
 
@@ -382,5 +382,6 @@ print("=" * 80)
 print(f"✓ Output file: extracted_features_complete.csv")
 print(f"✓ Ready for use with predict.py")
 print(f"✓ Date column included: Extracted from live.csv (date only, no time)")
+
 
 

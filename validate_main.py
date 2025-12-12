@@ -6,10 +6,11 @@ Updates BOTH databases: agility_soccer_v1 (old credentials + new WINBETS credent
 FIXES APPLIED:
 1. ✓ Fetches match_ids from PRIMARY database WHERE status = 'PENDING'
 2. ✓ Converts numeric(10,2) match_id to integer format
-3. ✓ Uses ctmcl_prediction column (not predicted_outcome which is numeric)
+3. ✓ Uses predicted_outcome column (not ctmcl_prediction)
 4. ✓ Normalizes team names with .strip()
 5. ✓ Better error handling and logging
 6. ✓ Syncs updates to both databases
+7. ✓ Updated to use actual database column names
 """
 
 import pandas as pd
@@ -87,13 +88,13 @@ try:
     
     # Fetch all PENDING match_ids from database
     fetch_query = sql.SQL("""
-        SELECT match_id, date, home_team, away_team, 
-               ctmcl_prediction, outcome_label,
-               odds_ft_over25, odds_ft_under25,
-               odds_ft_1, odds_ft_x, odds_ft_2
+        SELECT match_id, "date", home_team, away_team, 
+               predicted_outcome, predicted_winner,
+               over_2_5_odds, under_2_5_odds,
+               home_odds, draw_odds, away_odds
         FROM {}
         WHERE status = %s
-        ORDER BY date DESC
+        ORDER BY "date" DESC
     """).format(sql.Identifier(TABLE_NAME))
     
     cursor_primary.execute(fetch_query, ('PENDING',))
@@ -196,11 +197,11 @@ for idx, row in predictions_to_validate.iterrows():
     predicted_ou = str(row.get('predicted_outcome', '')).strip()
     predicted_winner = str(row.get('predicted_winner', '')).strip()
     
-    odds_over = row.get('odds_ft_over25', row.get('over_2_5_odds', 0))
-    odds_under = row.get('odds_ft_under25', row.get('under_2_5_odds', 0))
-    odds_home = row.get('odds_ft_1', row.get('home_odds', 0))
-    odds_away = row.get('odds_ft_2', row.get('away_odds', 0))
-    odds_draw = row.get('odds_ft_x', row.get('draw_odds', 0))
+    odds_over = row.get('over_2_5_odds', 0)
+    odds_under = row.get('under_2_5_odds', 0)
+    odds_home = row.get('home_odds', 0)
+    odds_away = row.get('away_odds', 0)
+    odds_draw = row.get('draw_odds', 0)
     
     home_team = str(row.get('home_team', '')).strip()
     away_team = str(row.get('away_team', '')).strip()

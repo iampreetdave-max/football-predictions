@@ -36,3 +36,7 @@ jobs:
     
     - name: Run Python script
       run: python save_main.py
+
+    - name: Feature
+      run: python feat.py
+      

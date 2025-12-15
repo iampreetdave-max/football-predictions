@@ -24,7 +24,7 @@ DB_CONFIG = {
 }
 
 TABLE_NAME = 'soccer_v1_features'
-CSV_FILE = 'extracted_features_complete__7_.csv'
+CSV_FILE = 'extracted_features_complete.csv'
 
 # Feature columns to insert (mapped from CSV)
 FEATURE_COLUMNS = [

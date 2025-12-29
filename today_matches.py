@@ -29,7 +29,7 @@ ALLOWED_LEAGUE_IDS = {
     # Germany Bundesliga
     12529, 14968,
     # USA MLS
-    13973,
+    13973,16504,
     # France Ligue 1
     12337, 14932,
     # Netherlands Eredivisie
@@ -58,7 +58,7 @@ LEAGUE_ID_TO_NAME = {
     12322: "Netherlands Eredivisie",
     14936: "Netherlands Eredivisie",
     15115: "Portugal Liga NOS",
-
+    16504: "USA MLS",
     12136: "Mexico Liga MX",
     15234: "Mexico Liga MX"
 }
@@ -452,6 +452,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 

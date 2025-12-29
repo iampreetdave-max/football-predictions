@@ -38,7 +38,7 @@ print("="*80)
 print("\n[1/4] Loading CSV mapping file...")
 
 try:
-    csv_path = 'map.csv'
+    csv_path = 'map2026.csv'
     mapping_df = pd.read_csv(csv_path, encoding='utf-8-sig')
     print(f"✓ Loaded mapping file with {len(mapping_df)} team entries")
 except Exception as e:

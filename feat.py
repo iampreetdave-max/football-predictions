@@ -1,20 +1,10 @@
-"""
-Push Feature Columns to soccer_v1_features Table
-Reads best_match_predictions.csv and inserts feature columns into soccer_v1_features
-- Simple CSV to database insertion
-- Skips duplicate match_ids
-- Only inserts specified feature columns
-"""
-
 import pandas as pd
 import psycopg2
 from psycopg2 import sql
-from datetime import datetime
 import sys
-from pathlib import Path
 import os
 
-# ==================== DATABASE CONFIGURATION ====================
+# Database credentials from environment variables
 DB_CONFIG = {
     'host': os.getenv('DB_HOST'),
     'port': int(os.getenv('DB_PORT', 5432)),
@@ -23,197 +13,215 @@ DB_CONFIG = {
     'password': os.getenv('DB_PASSWORD')
 }
 
-TABLE_NAME = 'soccer_v1_features'
-CSV_FILE = 'extracted_features_complete.csv'
+# CSV file path
+CSV_FILE = "extracted_features_complete.csv"
+TABLE_NAME = "soccer_features"
 
-# Feature columns to insert (mapped from CSV)
-FEATURE_COLUMNS = [
-    'CTMCL',
-    'avg_goals_market',
-    'pre_match_home_ppg',
-    'pre_match_away_ppg',
-    'home_xg_avg',
-    'away_xg_avg',
-    'home_xg_momentum',
-    'away_xg_momentum',
-    'home_goals_conceded_avg',
-    'away_goals_conceded_avg',
-    'o25_potential',
-    'o35_potential',
-    'home_shots_accuracy_avg',
-    'away_shots_accuracy_avg',
-    'home_dangerous_attacks_avg',
-    'away_dangerous_attacks_avg',
-    'h2h_total_goals_avg',
-    'home_form_points',
-    'away_form_points',
-    'home_elo',
-    'away_elo',
-    'elo_diff',
-    'league_avg_goals',
-    'odds_ft_1_prob',
-    'odds_ft_2_prob',
-    'btts_potential',
-    'o05_potential',
-    'o15_potential',
-    'o45_potential',
-]
-
-print("="*80)
-print("PUSH FEATURE COLUMNS TO DATABASE")
-print("="*80)
-print(f"Timestamp: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}")
-print(f"Table: {TABLE_NAME}")
-print(f"Total features: {len(FEATURE_COLUMNS)}")
-
-# ==================== LOAD CSV DATA ====================
-print(f"\n[1/4] Loading CSV file: {CSV_FILE}")
-try:
-    csv_path = Path(CSV_FILE)
-    if not csv_path.exists():
-        csv_path = Path(__file__).parent / CSV_FILE
-    if not csv_path.exists():
-        raise FileNotFoundError(f"Could not find {CSV_FILE}")
-    
-    df = pd.read_csv(csv_path)
-    print(f"✓ Loaded {len(df)} records from CSV")
-    
-except Exception as e:
-    print(f"✗ Error loading CSV: {e}")
-    sys.exit(1)
-
-# ==================== VERIFY REQUIRED COLUMNS ====================
-print(f"\n[2/4] Verifying required columns...")
-
-required_cols = ['match_id'] + FEATURE_COLUMNS
-missing_cols = [col for col in required_cols if col not in df.columns]
-
-if missing_cols:
-    print(f"✗ Missing columns:")
-    for col in missing_cols:
-        print(f"  • {col}")
-    print(f"\nAvailable columns in CSV:")
-    for col in df.columns:
-        print(f"  • {col}")
-    sys.exit(1)
-
-print(f"✓ All required columns present")
-
-# ==================== PREPARE DATA ====================
-print(f"\n[3/4] Preparing data for insertion...")
-
-# Select only match_id and feature columns
-db_data = df[required_cols].copy()
-
-# Replace NaN with None for proper NULL handling
-db_data = db_data.where(pd.notna(db_data), None)
-
-print(f"✓ Prepared {len(db_data)} records")
-
-# ==================== DATABASE CONNECTION ====================
-print(f"\nConnecting to database...")
-try:
-    conn = psycopg2.connect(**DB_CONFIG)
-    cursor = conn.cursor()
-    print(f"✓ Connected")
-    print(f"  Host: {DB_CONFIG['host']}")
-    print(f"  Database: {DB_CONFIG['database']}")
-except Exception as e:
-    print(f"✗ Connection error: {e}")
-    sys.exit(1)
-
-# ==================== CHECK FOR DUPLICATES ====================
-print(f"\nChecking for existing records...")
-try:
-    cursor.execute(sql.SQL("SELECT match_id FROM {}").format(sql.Identifier(TABLE_NAME)))
-    existing_ids = set([row[0] for row in cursor.fetchall()])
-    print(f"✓ Found {len(existing_ids)} existing records")
-except Exception as e:
-    print(f"✗ Error querying existing records: {e}")
-    cursor.close()
-    conn.close()
-    sys.exit(1)
-
-# Filter out duplicates
-new_data = db_data[~db_data['match_id'].isin(existing_ids)]
-duplicate_count = len(db_data) - len(new_data)
-
-print(f"\n  Records breakdown:")
-print(f"    • Total in CSV: {len(db_data)}")
-print(f"    • Already in DB: {duplicate_count}")
-print(f"    • New to insert: {len(new_data)}")
-
-if len(new_data) == 0:
-    print(f"\n✓ All records already exist. Nothing to insert.")
-    cursor.close()
-    conn.close()
-    sys.exit(0)
-
-# ==================== BUILD INSERT QUERY ====================
-print(f"\n[4/4] Inserting {len(new_data)} records...")
-
-# Build column list for INSERT
-columns_str = ', '.join(['match_id'] + FEATURE_COLUMNS)
-placeholders = ', '.join(['%s'] * len(required_cols))
-
-insert_query = sql.SQL("""
-    INSERT INTO {} ({})
-    VALUES ({})
-""").format(
-    sql.Identifier(TABLE_NAME),
-    sql.SQL(columns_str),
-    sql.SQL(placeholders)
-)
-
-# ==================== INSERT RECORDS ====================
-inserted = 0
-errors = 0
-error_details = []
-
-for idx, row in new_data.iterrows():
+def create_connection():
+    """Create a connection to PostgreSQL database"""
     try:
-        values = [row[col] for col in required_cols]
-        cursor.execute(insert_query, values)
-        inserted += 1
-        
-        if inserted % 10 == 0:
-            print(f"  Progress: {inserted}/{len(new_data)} records inserted...")
-            
+        conn = psycopg2.connect(
+            host=DB_CONFIG['host'],
+            port=DB_CONFIG['port'],
+            database=DB_CONFIG['database'],
+            user=DB_CONFIG['user'],
+            password=DB_CONFIG['password'],
+            sslmode='require'
+        )
+        print("✓ Connected to database successfully")
+        return conn
     except Exception as e:
-        errors += 1
-        error_msg = f"Match ID {row['match_id']}: {str(e)[:100]}"
-        error_details.append(error_msg)
+        print(f"✗ Error connecting to database: {e}")
+        sys.exit(1)
 
-# ==================== COMMIT ====================
-try:
-    conn.commit()
-    print(f"\n✓ Successfully committed {inserted} records")
-except Exception as e:
-    print(f"\n✗ Error committing: {e}")
-    conn.rollback()
-    cursor.close()
+def create_table(conn):
+    """Create soccer_features table"""
+    cursor = conn.cursor()
+    
+    create_table_query = f"""
+    CREATE TABLE IF NOT EXISTS {TABLE_NAME} (
+        id SERIAL PRIMARY KEY,
+        match_id BIGINT UNIQUE NOT NULL,
+        date DATE,
+        home_team_id INTEGER,
+        away_team_id INTEGER,
+        league_id INTEGER,
+        league_name VARCHAR(255),
+        home_team_name VARCHAR(255),
+        away_team_name VARCHAR(255),
+        CTMCL FLOAT,
+        avg_goals_market FLOAT,
+        team_a_xg_prematch FLOAT,
+        team_b_xg_prematch FLOAT,
+        pre_match_home_ppg FLOAT,
+        pre_match_away_ppg FLOAT,
+        home_xg_avg FLOAT,
+        away_xg_avg FLOAT,
+        home_xg_momentum FLOAT,
+        away_xg_momentum FLOAT,
+        home_goals_conceded_avg FLOAT,
+        away_goals_conceded_avg FLOAT,
+        o25_potential FLOAT,
+        o35_potential FLOAT,
+        home_shots_accuracy_avg FLOAT,
+        away_shots_accuracy_avg FLOAT,
+        home_dangerous_attacks_avg FLOAT,
+        away_dangerous_attacks_avg FLOAT,
+        h2h_total_goals_avg FLOAT,
+        home_form_points FLOAT,
+        away_form_points FLOAT,
+        home_elo FLOAT,
+        away_elo FLOAT,
+        elo_diff FLOAT,
+        league_avg_goals FLOAT,
+        odds_ft_1_prob FLOAT,
+        odds_ft_2_prob FLOAT,
+        btts_potential FLOAT,
+        o05_potential FLOAT,
+        o15_potential FLOAT,
+        o45_potential FLOAT,
+        odds_ft_over25 FLOAT,
+        odds_ft_under25 FLOAT,
+        odds_ft_1 FLOAT,
+        odds_ft_x FLOAT,
+        odds_ft_2 FLOAT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    """
+    
+    try:
+        cursor.execute(create_table_query)
+        conn.commit()
+        print(f"✓ Table '{TABLE_NAME}' created successfully")
+    except Exception as e:
+        print(f"✗ Error creating table: {e}")
+        conn.rollback()
+        sys.exit(1)
+    finally:
+        cursor.close()
+
+def load_csv_data(conn):
+    """Load CSV data into the table, skipping duplicates based on match_id"""
+    try:
+        # Read CSV file
+        df = pd.read_csv(CSV_FILE)
+        print(f"✓ Loaded CSV with {len(df)} rows and {len(df.columns)} columns")
+        
+        # Convert date column to datetime
+        df['date'] = pd.to_datetime(df['date'])
+        
+        cursor = conn.cursor()
+        
+        # Get existing match_ids from database
+        cursor.execute(f"SELECT DISTINCT match_id FROM {TABLE_NAME};")
+        existing_match_ids = set(row[0] for row in cursor.fetchall())
+        print(f"✓ Found {len(existing_match_ids)} existing match_ids in database")
+        
+        inserted_count = 0
+        skipped_count = 0
+        
+        # Insert data
+        for idx, row in df.iterrows():
+            match_id = row['match_id']
+            
+            # Check if match_id already exists
+            if match_id in existing_match_ids:
+                skipped_count += 1
+                continue
+            
+            insert_query = f"""
+            INSERT INTO {TABLE_NAME} (
+                match_id, date, home_team_id, away_team_id, league_id, league_name,
+                home_team_name, away_team_name, CTMCL, avg_goals_market, team_a_xg_prematch,
+                team_b_xg_prematch, pre_match_home_ppg, pre_match_away_ppg, home_xg_avg,
+                away_xg_avg, home_xg_momentum, away_xg_momentum, home_goals_conceded_avg,
+                away_goals_conceded_avg, o25_potential, o35_potential, home_shots_accuracy_avg,
+                away_shots_accuracy_avg, home_dangerous_attacks_avg, away_dangerous_attacks_avg,
+                h2h_total_goals_avg, home_form_points, away_form_points, home_elo, away_elo,
+                elo_diff, league_avg_goals, odds_ft_1_prob, odds_ft_2_prob, btts_potential,
+                o05_potential, o15_potential, o45_potential, odds_ft_over25, odds_ft_under25,
+                odds_ft_1, odds_ft_x, odds_ft_2
+            ) VALUES (
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                %s, %s, %s, %s, %s, %s
+            );
+            """
+            
+            values = (
+                row['match_id'], row['date'], row['home_team_id'], row['away_team_id'],
+                row['league_id'], row['league_name'], row['home_team_name'], row['away_team_name'],
+                row['CTMCL'], row['avg_goals_market'], row['team_a_xg_prematch'],
+                row['team_b_xg_prematch'], row['pre_match_home_ppg'], row['pre_match_away_ppg'],
+                row['home_xg_avg'], row['away_xg_avg'], row['home_xg_momentum'],
+                row['away_xg_momentum'], row['home_goals_conceded_avg'], row['away_goals_conceded_avg'],
+                row['o25_potential'], row['o35_potential'], row['home_shots_accuracy_avg'],
+                row['away_shots_accuracy_avg'], row['home_dangerous_attacks_avg'],
+                row['away_dangerous_attacks_avg'], row['h2h_total_goals_avg'], row['home_form_points'],
+                row['away_form_points'], row['home_elo'], row['away_elo'], row['elo_diff'],
+                row['league_avg_goals'], row['odds_ft_1_prob'], row['odds_ft_2_prob'],
+                row['btts_potential'], row['o05_potential'], row['o15_potential'],
+                row['o45_potential'], row['odds_ft_over25'], row['odds_ft_under25'],
+                row['odds_ft_1'], row['odds_ft_x'], row['odds_ft_2']
+            )
+            
+            cursor.execute(insert_query, values)
+            existing_match_ids.add(match_id)
+            inserted_count += 1
+            
+            if (inserted_count + skipped_count) % 10 == 0:
+                print(f"  Processed {inserted_count + skipped_count} rows (inserted: {inserted_count}, skipped: {skipped_count})...")
+        
+        conn.commit()
+        print(f"✓ Successfully loaded {inserted_count} new rows into '{TABLE_NAME}'")
+        print(f"⊘ Skipped {skipped_count} duplicate match_ids")
+        
+    except Exception as e:
+        print(f"✗ Error loading CSV data: {e}")
+        conn.rollback()
+        sys.exit(1)
+    finally:
+        cursor.close()
+
+def verify_data(conn):
+    """Verify data was loaded correctly"""
+    cursor = conn.cursor()
+    try:
+        cursor.execute(f"SELECT COUNT(*) FROM {TABLE_NAME};")
+        count = cursor.fetchone()[0]
+        print(f"✓ Verification: {count} rows in table '{TABLE_NAME}'")
+        
+        cursor.execute(f"SELECT * FROM {TABLE_NAME} LIMIT 3;")
+        sample = cursor.fetchall()
+        print(f"✓ Sample data retrieved successfully")
+        
+    except Exception as e:
+        print(f"✗ Error verifying data: {e}")
+    finally:
+        cursor.close()
+
+def main():
+    print("=" * 60)
+    print("Loading Soccer Features CSV to PostgreSQL")
+    print("=" * 60)
+    
+    # Connect to database
+    conn = create_connection()
+    
+    # Create table
+    create_table(conn)
+    
+    # Load data
+    load_csv_data(conn)
+    
+    # Verify
+    verify_data(conn)
+    
+    # Close connection
     conn.close()
-    sys.exit(1)
+    print("=" * 60)
+    print("✓ Process completed successfully!")
+    print("=" * 60)
 
-# ==================== VERIFY ====================
-print(f"\nVerifying database...")
-try:
-    cursor.execute(sql.SQL("SELECT COUNT(*) FROM {}").format(sql.Identifier(TABLE_NAME)))
-    total = cursor.fetchone()[0]
-    print(f"✓ Total records in {TABLE_NAME}: {total}")
-except Exception as e:
-    print(f"⚠ Could not verify: {e}")
-
-cursor.close()
-conn.close()
-
-# ==================== FINAL SUMMARY ====================
-print("\n" + "="*80)
-print("FINAL SUMMARY")
-print("="*80)
-print(f"✅ Successfully inserted {inserted} records")
-if errors > 0:
-    print(f"⚠️  Errors encountered: {errors} records (skipped)")
-    for detail in error_details[:5]:
-        print(f"    • {detail}")
-print("="*80)
+if __name__ == "__main__":
+    main()

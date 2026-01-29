@@ -40,6 +40,9 @@ jobs:
 
     - name: Run Python features
       run: python feat.py
+
+    - name: run ai 
+      run: python aii.py
       
 
    

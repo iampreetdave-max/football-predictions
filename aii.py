@@ -14,18 +14,19 @@ import json
 import time
 import sys
 from typing import Dict, Optional
+import os 
 
 # Database configuration
 DB_CONFIG = {
-    'host': 'winbets-predictions.postgres.database.azure.com',
-    'port': 5432,
-    'database': 'postgres',
-    'user': 'winbets',
-    'password': 'Constantinople@1900'
+    'host': os.getenv('DB_HOST'),
+    'port': int(os.getenv('DB_PORT', 5432)),
+    'database': os.getenv('DB_DATABASE'),
+    'user': os.getenv('DB_USER'),
+    'password': os.getenv('DB_PASSWORD')
 }
 
 # Mistral API configuration
-MISTRAL_API_KEY = 'pS5gro9f1FeKKZQS3gFKONyaCBAjJnDh'
+MISTRAL_API_KEY = os.getenv('MISTRAL_API_KEY')
 MISTRAL_API_URL = 'https://api.mistral.ai/v1/chat/completions'
 
 # League ID to Name mapping

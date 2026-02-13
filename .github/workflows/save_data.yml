@@ -41,6 +41,9 @@ jobs:
     - name: Run Python features
       run: python feat.py
 
+    - name: run v3
+      run: python v3_ml.py
+
     - name: run ai 
       run: python aii.py
       

@@ -1,27 +1,25 @@
 """
 Save Best Match Predictions to PostgreSQL Database
 Reads best_match_predictions.csv and inserts new predictions into agility_soccer_v3
-- Skips over/under columns (predicted_OverUnder, actual_over_under, ou_confidence, ou_grade)
-- These columns will be populated from a different repo
-- Handles NULL values properly
-- Uses environment variables for database credentials
+- Skips: predicted_OverUnder, actual_over_under, ou_confidence, ou_grade, predicted_outcome
+- Only 35 columns inserted
 """
 
 import pandas as pd
 import psycopg2
 from psycopg2 import sql
-from datetime import datetime
+from datetime import datetime, timezone
 import sys
 from pathlib import Path
 import os
 
 # ==================== DATABASE CONFIGURATION ====================
 DB_CONFIG = {
-    'host': os.getenv('DB_HOST'),
+    'host': os.getenv('DB_HOST', 'winbets-predictions.postgres.database.azure.com'),
     'port': int(os.getenv('DB_PORT', 5432)),
-    'database': os.getenv('DB_DATABASE'),
-    'user': os.getenv('DB_USER'),
-    'password': os.getenv('DB_PASSWORD')
+    'database': os.getenv('DB_DATABASE', 'postgres'),
+    'user': os.getenv('DB_USER', 'winbets'),
+    'password': os.getenv('DB_PASSWORD', 'Constantinople@1900')
 }
 
 TABLE_NAME = 'agility_soccer_v3'
@@ -51,10 +49,15 @@ LEAGUE_MAPPING = {
 print("="*80)
 print("AGILITY FOOTBALL PREDICTIONS - SAVE TO agility_soccer_v3")
 print("="*80)
-print(f"Timestamp: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}")
+print(f"Timestamp: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}")
 print(f"ℹ️  Table: {TABLE_NAME}")
 print(f"ℹ️  CSV File: {CSV_FILE}")
-print(f"⚠️  NOTE: Over/Under columns will NOT be populated from this script")
+print(f"⚠️  COLUMNS SKIPPED (will be populated from different repo):")
+print(f"    • predicted_OverUnder")
+print(f"    • actual_over_under")
+print(f"    • ou_confidence")
+print(f"    • ou_grade")
+print(f"    • predicted_outcome")
 
 # ==================== HELPER FUNCTIONS ====================
 def get_league_name(league_id):
@@ -64,39 +67,6 @@ def get_league_name(league_id):
         return LEAGUE_MAPPING.get(league_id_int, "Unknown League")
     except:
         return "Unknown League"
-
-def calculate_grade(confidence):
-    """Calculate letter grade from confidence score (0-1 scale)"""
-    if pd.isna(confidence):
-        return None
-    
-    # Validate confidence is in 0-1 range
-    if confidence < 0 or confidence > 1:
-        print(f"⚠️  Warning: Confidence {confidence} outside 0-1 range (clipping to valid range)")
-        confidence = max(0, min(1, confidence))
-    
-    score = confidence * 100
-    
-    if score >= 90:
-        return "A+"
-    elif score >= 85:
-        return "A"
-    elif score >= 80:
-        return "A-"
-    elif score >= 75:
-        return "B+"
-    elif score >= 70:
-        return "B"
-    elif score >= 65:
-        return "B-"
-    elif score >= 60:
-        return "C+"
-    elif score >= 55:
-        return "C"
-    elif score >= 50:
-        return "C-"
-    else:
-        return "D"
 
 # ==================== LOAD CSV DATA ====================
 print(f"\n[1/5] Loading CSV file: {CSV_FILE}")
@@ -110,12 +80,7 @@ try:
     
     df = pd.read_csv(csv_path)
     print(f"✓ Loaded {len(df)} records from CSV")
-    print(f"  Columns found: {len(df.columns)}")
-    
-    # Display sample data
-    print(f"\n  Sample data (first row):")
-    for col in list(df.columns)[:5]:
-        print(f"    {col}: {df[col].iloc[0]}")
+    print(f"  Original columns: {len(df.columns)}")
     
 except Exception as e:
     print(f"✗ Error loading CSV: {e}")
@@ -140,7 +105,6 @@ required_columns = {
     'predicted_away_goals': 'Predicted Away Goals',
     'confidence': 'Confidence Score',
     'predicted_goal_diff': 'Goal Difference',
-    'ctmcl_prediction': 'Over/Under Prediction',
     'outcome_label': 'Winner Prediction',
     'status': 'Match Status',
     'confidence_category': 'Confidence Category',
@@ -160,18 +124,13 @@ print(f"✓ All required columns present")
 # ==================== TRANSFORM DATA ====================
 print(f"\n[3/5] Transforming data for database...")
 
-# Define exact column order matching INSERT statement (36 columns, NO id column)
-# These columns are SKIPPED (will be populated from different repo):
-# - predicted_OverUnder
-# - actual_over_under
-# - ou_confidence
-# - ou_grade
-
+# CRITICAL: These are the EXACT 35 columns we need to insert
+# EXCLUDED: id, predicted_outcome, predicted_OverUnder, actual_over_under, ou_confidence, ou_grade
 db_columns = [
     'match_id', 'date', 'league', 'home_team', 'away_team',
     'home_odds', 'away_odds', 'draw_odds', 'over_2_5_odds', 'under_2_5_odds',
     'ctmcl', 'predicted_home_goals', 'predicted_away_goals', 'confidence',
-    'delta', 'predicted_outcome', 'predicted_winner', 'actual_winner',
+    'delta', 'predicted_winner', 'actual_winner',
     'status', 'profit_loss_outcome', 'profit_loss_winner', 'confidence_category',
     'actual_home_team_goals', 'actual_away_team_goals', 'actual_total_goals',
     'league_name', 'home_id', 'away_id', 'league_wb', 'home_teamname_wb',
@@ -179,9 +138,11 @@ db_columns = [
     'ml_grade', 'ml_confidence', 'ai_moneyline', 'ai_overunder', 'ai_spreads'
 ]
 
-db_data = pd.DataFrame(index=df.index)
+print(f"  Expected columns: {len(db_columns)}")
 
-# Map CSV columns to database columns
+db_data = pd.DataFrame()
+
+# Map CSV columns to database columns - ONE BY ONE
 db_data['match_id'] = df['match_id']
 db_data['date'] = df['date']
 db_data['league'] = df['league_id'].astype(str)
@@ -202,57 +163,56 @@ db_data['predicted_away_goals'] = df['predicted_away_goals']
 db_data['confidence'] = df['confidence']
 db_data['delta'] = df['predicted_goal_diff']
 
-# Predictions
-db_data['predicted_outcome'] = df['ctmcl_prediction']
+# Predictions - NO predicted_outcome
 db_data['predicted_winner'] = df['outcome_label']
-db_data['actual_winner'] = None  # Will be populated later
+db_data['actual_winner'] = None
 
 # Status
 db_data['status'] = df['status']
-db_data['profit_loss_outcome'] = None  # Will be populated later
-db_data['profit_loss_winner'] = None  # Will be populated later
+db_data['profit_loss_outcome'] = None
+db_data['profit_loss_winner'] = None
 db_data['confidence_category'] = df['confidence_category']
 
-# Actual results
-db_data['actual_home_team_goals'] = None  # Will be populated later
-db_data['actual_away_team_goals'] = None  # Will be populated later
-db_data['actual_total_goals'] = None  # Will be populated later
+# Actual results (NULL initially)
+db_data['actual_home_team_goals'] = None
+db_data['actual_away_team_goals'] = None
+db_data['actual_total_goals'] = None
 
 # League info
 db_data['league_name'] = df['league_id'].apply(get_league_name)
 db_data['home_id'] = df['home_team_id']
 db_data['away_id'] = df['away_team_id']
-db_data['league_wb'] = None  # Optional field
-db_data['home_teamname_wb'] = None  # Optional field
-db_data['away_teamname_wb'] = None  # Optional field
-db_data['home_teamid_wb'] = None  # Optional field
-db_data['away_teamid_wb'] = None  # Optional field
+db_data['league_wb'] = None
+db_data['home_teamname_wb'] = None
+db_data['away_teamname_wb'] = None
+db_data['home_teamid_wb'] = None
+db_data['away_teamid_wb'] = None
 
-# ML/AI predictions - set to NULL initially (optional fields)
+# ML/AI predictions
 db_data['ml_grade'] = None
 db_data['ml_confidence'] = None
 db_data['ai_moneyline'] = None
 db_data['ai_overunder'] = None
 db_data['ai_spreads'] = None
 
-# Reorder to match INSERT statement exactly
+# REORDER to match expected order EXACTLY
 db_data = db_data[db_columns]
 
 print(f"✓ Transformed {len(db_data)} records")
-print(f"  Fields mapped: {len(db_data.columns)}")
-print(f"  Column order verified: {len(db_data.columns) == len(db_columns)} (36 expected)")
+print(f"  Final columns in db_data: {len(db_data.columns)}")
+print(f"  MATCH: {len(db_data.columns) == len(db_columns)}")
 
-# Show league name mapping summary
+if len(db_data.columns) != len(db_columns):
+    print(f"\n❌ COLUMN COUNT MISMATCH!")
+    print(f"  Expected: {len(db_columns)}")
+    print(f"  Got: {len(db_data.columns)}")
+    sys.exit(1)
+
+# Show league distribution
 league_counts = db_data['league_name'].value_counts()
 print(f"\n  🏆 League distribution:")
 for league, count in league_counts.items():
     print(f"    • {league}: {count} matches")
-
-print(f"\n  🚫 Columns SKIPPED (will be populated from different repo):")
-print(f"    • predicted_OverUnder")
-print(f"    • actual_over_under")
-print(f"    • ou_confidence")
-print(f"    • ou_grade")
 
 # ==================== INSERT TO TABLE ====================
 def insert_to_table(table_name, db_data):
@@ -305,7 +265,7 @@ def insert_to_table(table_name, db_data):
             match_id, date, league, home_team, away_team,
             home_odds, away_odds, draw_odds, over_2_5_odds, under_2_5_odds,
             ctmcl, predicted_home_goals, predicted_away_goals, confidence,
-            delta, predicted_outcome, predicted_winner, actual_winner,
+            delta, predicted_winner, actual_winner,
             status, profit_loss_outcome, profit_loss_winner, confidence_category,
             actual_home_team_goals, actual_away_team_goals, actual_total_goals,
             league_name, home_id, away_id, league_wb, home_teamname_wb,
@@ -315,7 +275,7 @@ def insert_to_table(table_name, db_data):
             %s, %s, %s, %s, %s,
             %s, %s, %s, %s, %s,
             %s, %s, %s, %s,
-            %s, %s, %s, %s,
+            %s, %s, %s,
             %s, %s, %s, %s,
             %s, %s, %s,
             %s, %s, %s, %s, %s,
@@ -330,10 +290,7 @@ def insert_to_table(table_name, db_data):
 
     for idx, row in new_data.iterrows():
         try:
-            values = [None if pd.isna(v) else v for v in row.values]
-            
-            if len(values) != 36:
-                raise ValueError(f"Expected 36 columns, got {len(values)}")
+            values = tuple([None if pd.isna(v) else v for v in row.values])
             
             cursor.execute(insert_query, values)
             inserted += 1
@@ -345,7 +302,7 @@ def insert_to_table(table_name, db_data):
             errors += 1
             error_msg = f"Match ID {row['match_id']}: {str(e)[:100]}"
             error_details.append(error_msg)
-            if errors <= 3:
+            if errors <= 5:
                 print(f"    ⚠️  {error_msg}")
 
     # Commit this transaction
@@ -395,42 +352,15 @@ if result['success']:
     if result.get('skipped'):
         print(f"✓ {TABLE_NAME}: No new records to insert (all duplicates)")
     else:
-        print(f"✓ {TABLE_NAME}: {result['inserted']} records inserted")
+        print(f"✓ {TABLE_NAME}: {result['inserted']} records inserted ✅")
         if result['errors'] > 0:
             print(f"  ⚠️  {result['errors']} records had errors (skipped)")
 else:
     print(f"✗ {TABLE_NAME}: FAILED - 0 records inserted")
 
 print("\n" + "="*80)
-print("⚠️  IMPORTANT REMINDERS:")
-print("="*80)
-print("""
-The following columns were NOT populated from this script:
-  • predicted_OverUnder
-  • actual_over_under
-  • ou_confidence
-  • ou_grade
-
-These columns will be populated from a different repository.
-
-Environment Variables Required:
-  • DB_HOST
-  • DB_PORT (default: 5432)
-  • DB_DATABASE
-  • DB_USER
-  • DB_PASSWORD
-
-Example usage:
-  export DB_HOST="winbets-predictions.postgres.database.azure.com"
-  export DB_PORT=5432
-  export DB_DATABASE="postgres"
-  export DB_USER="winbets"
-  export DB_PASSWORD="Constantinople@1900"
-  python save_predictions_v3_env.py
-
-Next steps:
-  1. Run the over/under prediction script from the other repo
-  2. Wait for matches to complete
-  3. Run validation script to update actual results
-""")
+if result['success'] and result.get('inserted', 0) > 0:
+    print("✅ SUCCESS! Data inserted successfully")
+else:
+    print("⚠️  Check details above")
 print("="*80)

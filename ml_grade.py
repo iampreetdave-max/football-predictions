@@ -1,14 +1,17 @@
 """
-Update Database Grades Script
-==============================
+Update Database Grades Script - DUAL TABLES
+============================================
 
 Connects to PostgreSQL database and updates ml_grade and ml_confidence columns
-using Approach 1 market-aware confidence grading.
+using market-aware confidence grading.
+
+Updates BOTH tables:
+- agility_soccer_v1
+- agility_soccer_v3
 
 Only updates records where ml_grade is NULL.
 
 Database: winbets-predictions.postgres.database.azure.com
-Table: agility_soccer_v1
 Columns updated: ml_grade, ml_confidence
 """
 
@@ -19,11 +22,12 @@ import numpy as np
 from typing import Tuple, List, Dict
 import logging
 from datetime import datetime
+import os
 
 # ============================================================================
 # CONFIGURATION
 # ============================================================================
-import os
+
 # Database credentials
 DB_CONFIG = {
     'host': os.getenv('DB_HOST'),
@@ -33,7 +37,7 @@ DB_CONFIG = {
     'password': os.getenv('DB_PASSWORD')
 }
 
-TABLE_NAME = "agility_soccer_v1"
+TABLE_NAMES = ["agility_soccer_v1", "agility_soccer_v3"]
 
 # Hardcoded quantile thresholds from historical v1shift data analysis
 Q1_THRESHOLD = 0.1264  # 12.64%
@@ -72,8 +76,8 @@ def get_db_connection():
         raise
 
 
-def fetch_null_grade_records(conn) -> pd.DataFrame:
-    """Fetch records where ml_grade is NULL."""
+def fetch_null_grade_records(conn, table_name) -> pd.DataFrame:
+    """Fetch records where ml_grade is NULL from specified table."""
     query = f"""
     SELECT 
         match_id,
@@ -83,17 +87,17 @@ def fetch_null_grade_records(conn) -> pd.DataFrame:
         home_odds,
         away_odds,
         draw_odds
-    FROM {TABLE_NAME}
+    FROM {table_name}
     WHERE ml_grade IS NULL
     ORDER BY match_id
     """
     
     try:
         df = pd.read_sql(query, conn)
-        logger.info(f"[OK] Fetched {len(df)} records with NULL ml_grade")
+        logger.info(f"[OK] Fetched {len(df)} records with NULL ml_grade from {table_name}")
         return df
     except Exception as e:
-        logger.error(f"[ERROR] Error fetching records: {e}")
+        logger.error(f"[ERROR] Error fetching records from {table_name}: {e}")
         raise
 
 
@@ -201,22 +205,21 @@ def calculate_grades(df: pd.DataFrame) -> pd.DataFrame:
     return df[["match_id", "ml_grade", "ml_confidence"]]
 
 
-def update_database(conn, grades_df: pd.DataFrame) -> int:
+def update_database(conn, table_name, grades_df: pd.DataFrame) -> int:
     """Update database with calculated grades and confidence."""
     if len(grades_df) == 0:
-        logger.warning("No records to update")
+        logger.warning(f"No records to update in {table_name}")
         return 0
     
-    logger.info(f"\nUpdating {len(grades_df)} records in database...")
+    logger.info(f"\nUpdating {len(grades_df)} records in {table_name}...")
     
     cursor = conn.cursor()
     
     update_query = f"""
-    UPDATE {TABLE_NAME}
+    UPDATE {table_name}
     SET 
         ml_grade = %s,
-        ml_confidence = %s,
-        updated_at = NOW()
+        ml_confidence = %s
     WHERE match_id = %s
     """
     
@@ -231,20 +234,20 @@ def update_database(conn, grades_df: pd.DataFrame) -> int:
         # Execute batch update
         execute_batch(cursor, update_query, update_data, page_size=BATCH_SIZE)
         conn.commit()
-        logger.info(f"[OK] Successfully updated {len(grades_df)} records")
+        logger.info(f"[OK] Successfully updated {len(grades_df)} records in {table_name}")
         return len(grades_df)
     except Exception as e:
         conn.rollback()
-        logger.error(f"[ERROR] Error updating database: {e}")
+        logger.error(f"[ERROR] Error updating {table_name}: {e}")
         raise
     finally:
         cursor.close()
 
 
-def print_summary(grades_df: pd.DataFrame):
+def print_summary(table_name, grades_df: pd.DataFrame):
     """Print summary statistics."""
     logger.info("\n" + "=" * 80)
-    logger.info("SUMMARY")
+    logger.info(f"SUMMARY - {table_name}")
     logger.info("=" * 80)
     logger.info(f"Records updated: {len(grades_df)}")
     logger.info(f"\nGrade Distribution:")
@@ -264,37 +267,47 @@ def print_summary(grades_df: pd.DataFrame):
     logger.info(f"  B: {Q1_THRESHOLD*100:.2f}% <= ml_confidence < {Q2_THRESHOLD*100:.2f}%")
     logger.info(f"  C: {Q2_THRESHOLD*100:.2f}% <= ml_confidence < {Q3_THRESHOLD*100:.2f}%")
     logger.info(f"  D: ml_confidence >= {Q3_THRESHOLD*100:.2f}%")
-    logger.info("=" * 80 + "\n")
+    logger.info("=" * 80)
 
 
 def main():
     """Main execution function."""
     logger.info("=" * 80)
-    logger.info("DATABASE GRADE UPDATE - APPROACH 1")
+    logger.info("DATABASE GRADE UPDATE - DUAL TABLES")
     logger.info("=" * 80)
+    logger.info(f"Tables: {', '.join(TABLE_NAMES)}")
+    logger.info(f"Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     
     conn = None
     try:
         # Connect to database
         conn = get_db_connection()
         
-        # Fetch records with NULL ml_grade
-        df_records = fetch_null_grade_records(conn)
+        # Process each table
+        for table_name in TABLE_NAMES:
+            logger.info(f"\n{'='*80}")
+            logger.info(f"Processing: {table_name}")
+            logger.info(f"{'='*80}")
+            
+            # Fetch records with NULL ml_grade
+            df_records = fetch_null_grade_records(conn, table_name)
+            
+            if len(df_records) == 0:
+                logger.info(f"No records with NULL ml_grade found in {table_name}. Skipping.")
+                continue
+            
+            # Calculate grades
+            df_grades = calculate_grades(df_records)
+            
+            # Update database
+            updated_count = update_database(conn, table_name, df_grades)
+            
+            # Print summary
+            print_summary(table_name, df_grades)
         
-        if len(df_records) == 0:
-            logger.info("No records with NULL ml_grade found. Exiting.")
-            return
-        
-        # Calculate grades
-        df_grades = calculate_grades(df_records)
-        
-        # Update database
-        updated_count = update_database(conn, df_grades)
-        
-        # Print summary
-        print_summary(df_grades)
-        
-        logger.info("[OK] Process completed successfully")
+        logger.info("\n" + "=" * 80)
+        logger.info("[OK] Process completed successfully for all tables")
+        logger.info("=" * 80)
         
     except Exception as e:
         logger.error(f"[ERROR] Process failed: {e}")

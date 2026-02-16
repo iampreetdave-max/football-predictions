@@ -131,7 +131,7 @@ db_columns = [
     'home_odds', 'away_odds', 'draw_odds', 'over_2_5_odds', 'under_2_5_odds',
     'ctmcl', 'predicted_home_goals', 'predicted_away_goals', 'confidence',
     'delta', 'predicted_winner', 'actual_winner',
-    'status', 'profit_loss_outcome', 'profit_loss_winner', 'confidence_category',
+    'status', 'profit_loss_over_under', 'profit_loss_winner', 'confidence_category',
     'actual_home_team_goals', 'actual_away_team_goals', 'actual_total_goals',
     'league_name', 'home_id', 'away_id', 'league_wb', 'home_teamname_wb',
     'away_teamname_wb', 'home_teamid_wb', 'away_teamid_wb',
@@ -169,7 +169,7 @@ db_data['actual_winner'] = None
 
 # Status
 db_data['status'] = df['status']
-db_data['profit_loss_outcome'] = None
+db_data['profit_loss_over_under'] = None
 db_data['profit_loss_winner'] = None
 db_data['confidence_category'] = df['confidence_category']
 
@@ -266,7 +266,7 @@ def insert_to_table(table_name, db_data):
             home_odds, away_odds, draw_odds, over_2_5_odds, under_2_5_odds,
             ctmcl, predicted_home_goals, predicted_away_goals, confidence,
             delta, predicted_winner, actual_winner,
-            status, profit_loss_outcome, profit_loss_winner, confidence_category,
+            status, profit_loss_over_under, profit_loss_winner, confidence_category,
             actual_home_team_goals, actual_away_team_goals, actual_total_goals,
             league_name, home_id, away_id, league_wb, home_teamname_wb,
             away_teamname_wb, home_teamid_wb, away_teamid_wb,

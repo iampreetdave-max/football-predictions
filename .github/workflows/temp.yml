@@ -27,4 +27,4 @@ jobs:
           DB_USER: ${{ secrets.DB_USER }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           FOOTBALL_API_KEY: ${{ secrets.FOOTBALL_API_KEY_FOOTBALL}}
-        run: team_mapping_script_footy_football.py
+        run: python team_mapping_script_footy_football.py

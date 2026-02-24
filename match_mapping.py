@@ -35,7 +35,7 @@ def get_connection():
 
 
 # ── Config ────────────────────────────────────────────────────
-FOOTBALL_API_KEY = os.environ["FOOTBALL_API_KEY_FOOTBALL"]
+FOOTBALL_API_KEY = os.environ["FOOTBALL_API_KEY"]
 FOOTBALL_API_BASE = "https://v3.football.api-sports.io"
 
 LEAGUES = {

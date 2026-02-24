@@ -1,4 +1,4 @@
-name: IDS
+name: IDS & Grades & match_mapping
 on:
   schedule:
     # Runs at 8 AM UTC every day
@@ -43,3 +43,6 @@ jobs:
       
     - name: Run OU_grade
       run: python ou_grade.py
+
+    - name: Run match_mapping
+      run: python match_mapping.py

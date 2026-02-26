@@ -1,7 +1,7 @@
 """
 FIXED VALIDATION SCRIPT - DATABASE-BASED DUAL DATABASE
 This script reads PENDING match_ids from PRIMARY database and validates match results
-Updates BOTH databases: agility_soccer_v1 (old credentials + new WINBETS credentials)
+Updates BOTH databases: predictions_soccer_v1_ourmodel (old credentials + new WINBETS credentials)
 
 FIXES APPLIED:
 1. ✓ Fetches match_ids from PRIMARY database WHERE status = 'PENDING'
@@ -54,7 +54,7 @@ DB_CONFIG_WINBETS = {
     'password': os.getenv('WINBETS_DB_PASSWORD')
 }
 
-TABLE_NAME = 'agility_soccer_v1'
+TABLE_NAME = 'predictions_soccer_v1_ourmodel'
 
 print("\n" + "="*80)
 print("AGILITY FOOTBALL PREDICTIONS - DATABASE-BASED DUAL DB VALIDATION")

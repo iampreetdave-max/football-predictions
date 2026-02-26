@@ -1,11 +1,11 @@
 """
-VALIDATION SCRIPT - AGILITY_SOCCER_V3 - PROFIT/LOSS CALCULATION
-This script reads PENDING match_ids from agility_soccer_v3 and validates match results
+VALIDATION SCRIPT - predictions_soccer_v3_ourmodel - PROFIT/LOSS CALCULATION
+This script reads PENDING match_ids from predictions_soccer_v3_ourmodel and validates match results
 Calculates profit/loss for both moneyline and over/under predictions
 Syncs to BOTH databases: PRIMARY (old credentials) AND WINBETS (new credentials)
 
 FEATURES:
-1. ✓ Fetches match_ids from agility_soccer_v3 WHERE status = 'PENDING'
+1. ✓ Fetches match_ids from predictions_soccer_v3_ourmodel WHERE status = 'PENDING'
 2. ✓ Converts numeric(10,2) match_id to integer format
 3. ✓ Uses correct column names for v3 table
 4. ✓ Normalizes team names with .strip()
@@ -54,7 +54,7 @@ DB_CONFIG_WINBETS = {
     'password': os.getenv('WINBETS_DB_PASSWORD')
 }
 
-TABLE_NAME = 'agility_soccer_v3'
+TABLE_NAME = 'predictions_soccer_v3_ourmodel'
 
 print("\n" + "="*80)
 print("AGILITY FOOTBALL PREDICTIONS - VALIDATION WITH PROFIT/LOSS")
@@ -87,7 +87,7 @@ try:
         print(f"\n✗ CRITICAL: Cannot connect to PRIMARY database!")
         exit(1)
     
-    # Fetch all PENDING match_ids from agility_soccer_v3
+    # Fetch all PENDING match_ids from predictions_soccer_v3_ourmodel
     fetch_query = sql.SQL("""
         SELECT match_id, date, home_team, away_team, 
                predicted_winner,

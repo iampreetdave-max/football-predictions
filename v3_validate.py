@@ -223,7 +223,7 @@ for idx, row in predictions_to_validate.iterrows():
                     
                     # =============== PROFIT/LOSS CALCULATION ===============
                     
-                    profit_loss_outcome = None
+                    profit_loss_over_under = None
                     
                     # For Moneyline (predicted_winner)
                     if predicted_winner == 'Home Win' and actual_winner == home_team:
@@ -245,7 +245,7 @@ for idx, row in predictions_to_validate.iterrows():
                                 actual_away_team_goals = %s,
                                 actual_total_goals = %s,
                                 status = %s,
-                                profit_loss_outcome = %s,
+                                profit_loss_over_under = %s,
                                 profit_loss_winner = %s
                             WHERE match_id = %s
                         """).format(sql.Identifier(TABLE_NAME))
@@ -256,7 +256,7 @@ for idx, row in predictions_to_validate.iterrows():
                             float(away_score),
                             float(total_goals),
                             'SETTLED',
-                            profit_loss_outcome,
+                            profit_loss_over_under,
                             profit_loss_winner,
                             match_id
                         ))

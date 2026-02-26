@@ -2,8 +2,8 @@
 DUAL DATABASE ID MAPPING SCRIPT - DUAL TABLES
 Maps team IDs and league data between databases
 Updates BOTH tables AND both databases:
-- agility_soccer_v1 (Primary)
-- agility_soccer_v3 (New)
+- predictions_soccer_v1_ourmodel (Primary)
+- predictions_soccer_v3_ourmodel (New)
 
 For:
 - Primary database (old credentials)
@@ -34,7 +34,7 @@ DB_CONFIG_WINBETS = {
     'password': os.getenv('WINBETS_DB_PASSWORD')
 }
 
-TABLE_NAMES = ['agility_soccer_v1', 'agility_soccer_v3']
+TABLE_NAMES = ['predictions_soccer_v1_ourmodel', 'predictions_soccer_v3_ourmodel']
 
 print("="*80)
 print("DUAL DATABASE ID MAPPING SCRIPT - DUAL TABLES")
@@ -218,11 +218,11 @@ print("="*80)
 if success_primary and success_winbets:
     print("✅ SUCCESS! ID mapping completed for:")
     print("  ✓ PRIMARY database - BOTH tables")
-    print("    • agility_soccer_v1")
-    print("    • agility_soccer_v3")
+    print("    • predictions_soccer_v1_ourmodel")
+    print("    • predictions_soccer_v3_ourmodel")
     print("  ✓ WINBETS database - BOTH tables")
-    print("    • agility_soccer_v1")
-    print("    • agility_soccer_v3")
+    print("    • predictions_soccer_v1_ourmodel")
+    print("    • predictions_soccer_v3_ourmodel")
 elif success_primary:
     print("⚠️  PRIMARY database OK, but WINBETS database FAILED")
 elif success_winbets:

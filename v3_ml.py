@@ -1,6 +1,6 @@
 """
 Save Best Match Predictions to PostgreSQL Database
-Reads best_match_predictions.csv and inserts new predictions into agility_soccer_v3
+Reads best_match_predictions.csv and inserts new predictions into predictions_soccer_v3_ourmodel
 - Skips: predicted_OverUnder, actual_over_under, ou_confidence, ou_grade, predicted_outcome
 - Only 35 columns inserted
 """
@@ -22,7 +22,7 @@ DB_CONFIG = {
     'password': os.getenv('DB_PASSWORD', 'Constantinople@1900')
 }
 
-TABLE_NAME = 'agility_soccer_v3'
+TABLE_NAME = 'predictions_soccer_v3_ourmodel'
 CSV_FILE = 'best_match_predictions.csv'
 
 # ==================== LEAGUE ID MAPPING ====================
@@ -47,7 +47,7 @@ LEAGUE_MAPPING = {
 }
 
 print("="*80)
-print("AGILITY FOOTBALL PREDICTIONS - SAVE TO agility_soccer_v3")
+print("AGILITY FOOTBALL PREDICTIONS - SAVE TO predictions_soccer_v3_ourmodel")
 print("="*80)
 print(f"Timestamp: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}")
 print(f"ℹ️  Table: {TABLE_NAME}")

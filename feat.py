@@ -15,7 +15,7 @@ DB_CONFIG = {
 
 # CSV file path
 CSV_FILE = "extracted_features_complete.csv"
-TABLE_NAME = "soccer_features"
+TABLE_NAME = "model_training_soccer"
 
 def create_connection():
     """Create a connection to PostgreSQL database"""

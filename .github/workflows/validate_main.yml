@@ -37,3 +37,6 @@ jobs:
     
     - name: Run Python script
       run: python validate_main.py
+
+    - name: run v3 validate
+      run: python v3_validate.py

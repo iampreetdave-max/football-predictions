@@ -1,8 +1,8 @@
 """
 Save Best Match Predictions to PostgreSQL Database
 Reads best_match_predictions.csv and inserts new predictions into two tables:
-- agility_soccer_v1
-- soccer_v1_features
+- predictions_soccer_v1_ourmodel
+- model_training_soccer
 Both tables in the same database with identical columns
 - Skips duplicate match_ids in each table separately
 - Handles NULL values properly
@@ -27,7 +27,7 @@ DB_CONFIG = {
     'password': os.getenv('DB_PASSWORD')
 }
 
-TABLE_NAMES = ['agility_soccer_v1', 'soccer_v1_features']
+TABLE_NAMES = ['predictions_soccer_v1_ourmodel', 'model_training_soccer']
 CSV_FILE = 'best_match_predictions.csv'
 
 # ==================== LEAGUE ID MAPPING ====================

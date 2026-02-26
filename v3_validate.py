@@ -2,7 +2,7 @@
 VALIDATION SCRIPT - predictions_soccer_v3_ourmodel - PROFIT/LOSS CALCULATION
 This script reads PENDING match_ids from predictions_soccer_v3_ourmodel and validates match results
 Calculates profit/loss for both moneyline and over/under predictions
-Syncs to BOTH databases: PRIMARY (old credentials) AND WINBETS (new credentials)
+Syncs to PRIMARY database ONLY
 
 FEATURES:
 1. ✓ Fetches match_ids from predictions_soccer_v3_ourmodel WHERE status = 'PENDING'
@@ -10,7 +10,7 @@ FEATURES:
 3. ✓ Uses correct column names for v3 table
 4. ✓ Normalizes team names with .strip()
 5. ✓ Calculates profit/loss for moneyline and over/under
-6. ✓ Updates BOTH databases
+6. ✓ Updates PRIMARY database only
 7. ✓ Better error handling and logging
 """
 
@@ -36,22 +36,13 @@ API_CONFIGS = [
 ]
 
 # ==================== DATABASE CONFIGURATION ====================
-# Primary database (old credentials)
+# Primary database
 DB_CONFIG = {
     'host': os.getenv('DB_HOST'),
     'port': int(os.getenv('DB_PORT', 5432)),
     'database': os.getenv('DB_DATABASE'),
     'user': os.getenv('DB_USER'),
     'password': os.getenv('DB_PASSWORD')
-}
-
-# Secondary database (new credentials - WINBETS)
-DB_CONFIG_WINBETS = {
-    'host': os.getenv('WINBETS_DB_HOST'),
-    'port': int(os.getenv('WINBETS_DB_PORT', 5432)),
-    'database': os.getenv('WINBETS_DB_DATABASE'),
-    'user': os.getenv('WINBETS_DB_USER'),
-    'password': os.getenv('WINBETS_DB_PASSWORD')
 }
 
 TABLE_NAME = 'predictions_soccer_v3_ourmodel'
@@ -62,7 +53,7 @@ print("="*80)
 print(f"Timestamp: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}")
 print(f"ℹ️  Table: {TABLE_NAME}")
 print(f"ℹ️  This version fetches PENDING match_ids and calculates P/L")
-print(f"ℹ️  Updates BOTH PRIMARY and WINBETS databases")
+print(f"ℹ️  Updates PRIMARY database only")
 
 # ==================== HELPER FUNCTION FOR DATABASE OPERATIONS ====================
 def connect_database(db_config, db_name):
@@ -77,11 +68,11 @@ def connect_database(db_config, db_name):
         return None, None
 
 # ==================== CONNECT TO PRIMARY DATABASE & FETCH PENDING MATCH_IDS ====================
-print("\n[1/6] Connecting to PRIMARY database and fetching PENDING match_ids...")
+print("\n[1/4] Connecting to PRIMARY database and fetching PENDING match_ids...")
 print("="*80)
 
 try:
-    conn_primary, cursor_primary = connect_database(DB_CONFIG, "PRIMARY (Old Credentials)")
+    conn_primary, cursor_primary = connect_database(DB_CONFIG, "PRIMARY")
     
     if not conn_primary or not cursor_primary:
         print(f"\n✗ CRITICAL: Cannot connect to PRIMARY database!")
@@ -127,18 +118,8 @@ except Exception as e:
         conn_primary.close()
     exit(1)
 
-# ==================== CONNECT TO WINBETS DATABASE ====================
-print("\n[2/6] Connecting to WINBETS database...")
-print("="*80)
-
-conn_winbets, cursor_winbets = connect_database(DB_CONFIG_WINBETS, "WINBETS (New Credentials)")
-
-if not conn_winbets:
-    print(f"\n⚠️  Warning: WINBETS database connection failed")
-    print(f"ℹ️  Will continue with PRIMARY database only")
-
 # ==================== TEST API FIRST ====================
-print("\n[3/6] Testing API configurations...")
+print("\n[2/4] Testing API configurations...")
 print("="*80)
 
 working_api_config = None
@@ -177,14 +158,12 @@ if not working_api_config:
     print(f"\n✗ ERROR: No working API configuration found!")
     if conn_primary:
         conn_primary.close()
-    if conn_winbets:
-        conn_winbets.close()
     exit(1)
 
 print(f"\n✓ Using: {working_api_config['url']} with parameter '{working_api_config['param']}'")
 
-# ==================== FETCH & UPDATE BOTH DATABASES ====================
-print("\n[4/6] Fetching match results and updating databases...")
+# ==================== FETCH & UPDATE PRIMARY DATABASE ====================
+print("\n[3/4] Fetching match results and updating PRIMARY database...")
 print("="*80)
 
 successful_updates = 0
@@ -244,8 +223,6 @@ for idx, row in predictions_to_validate.iterrows():
                     
                     # =============== PROFIT/LOSS CALCULATION ===============
                     
-                    # For Over/Under: We predict but don't have predicted_over_under in v3
-                    # So we set profit_loss_outcome to NULL (will be populated from other repo)
                     profit_loss_outcome = None
                     
                     # For Moneyline (predicted_winner)
@@ -259,68 +236,35 @@ for idx, row in predictions_to_validate.iterrows():
                         profit_loss_winner = -1.0
                     
                     # =============== UPDATE PRIMARY DATABASE ===============
-                    if conn_primary and cursor_primary:
-                        try:
-                            update_query = sql.SQL("""
-                                UPDATE {}
-                                SET 
-                                    actual_winner = %s,
-                                    actual_home_team_goals = %s,
-                                    actual_away_team_goals = %s,
-                                    actual_total_goals = %s,
-                                    status = %s,
-                                    profit_loss_outcome = %s,
-                                    profit_loss_winner = %s
-                                WHERE match_id = %s
-                            """).format(sql.Identifier(TABLE_NAME))
-                            
-                            cursor_primary.execute(update_query, (
-                                actual_winner,
-                                float(home_score),
-                                float(away_score),
-                                float(total_goals),
-                                'SETTLED',
-                                profit_loss_outcome,
-                                profit_loss_winner,
-                                match_id
-                            ))
-                            
-                            conn_primary.commit()
-                        except Exception as e:
-                            print(f"⚠ Error updating PRIMARY DB for {match_id}: {str(e)[:50]}")
-                            conn_primary.rollback()
-                    
-                    # =============== UPDATE WINBETS DATABASE ===============
-                    if conn_winbets and cursor_winbets:
-                        try:
-                            update_query = sql.SQL("""
-                                UPDATE {}
-                                SET 
-                                    actual_winner = %s,
-                                    actual_home_team_goals = %s,
-                                    actual_away_team_goals = %s,
-                                    actual_total_goals = %s,
-                                    status = %s,
-                                    profit_loss_outcome = %s,
-                                    profit_loss_winner = %s
-                                WHERE match_id = %s
-                            """).format(sql.Identifier(TABLE_NAME))
-                            
-                            cursor_winbets.execute(update_query, (
-                                actual_winner,
-                                float(home_score),
-                                float(away_score),
-                                float(total_goals),
-                                'SETTLED',
-                                profit_loss_outcome,
-                                profit_loss_winner,
-                                match_id
-                            ))
-                            
-                            conn_winbets.commit()
-                        except Exception as e:
-                            print(f"⚠ Error updating WINBETS DB for {match_id}: {str(e)[:50]}")
-                            conn_winbets.rollback()
+                    try:
+                        update_query = sql.SQL("""
+                            UPDATE {}
+                            SET 
+                                actual_winner = %s,
+                                actual_home_team_goals = %s,
+                                actual_away_team_goals = %s,
+                                actual_total_goals = %s,
+                                status = %s,
+                                profit_loss_outcome = %s,
+                                profit_loss_winner = %s
+                            WHERE match_id = %s
+                        """).format(sql.Identifier(TABLE_NAME))
+                        
+                        cursor_primary.execute(update_query, (
+                            actual_winner,
+                            float(home_score),
+                            float(away_score),
+                            float(total_goals),
+                            'SETTLED',
+                            profit_loss_outcome,
+                            profit_loss_winner,
+                            match_id
+                        ))
+                        
+                        conn_primary.commit()
+                    except Exception as e:
+                        print(f"⚠ Error updating PRIMARY DB for {match_id}: {str(e)[:50]}")
+                        conn_primary.rollback()
                     
                     successful_updates += 1
                     
@@ -348,7 +292,7 @@ for idx, row in predictions_to_validate.iterrows():
 
 # ==================== SUMMARY ====================
 print("\n" + "="*80)
-print("VALIDATION SUMMARY")
+print("[4/4] VALIDATION SUMMARY")
 print("="*80)
 print(f"✓ Successfully updated: {successful_updates} matches (SETTLED)")
 print(f"⏳ Still pending: {failed_fetches} matches (PENDING)")
@@ -356,21 +300,16 @@ print(f"⏳ Still pending: {failed_fetches} matches (PENDING)")
 if successful_updates == 0:
     print(f"\n⚠️  WARNING: No matches were successfully validated")
 
-# Close connections
+# Close connection
 if conn_primary:
     cursor_primary.close()
     conn_primary.close()
     print(f"\n✓ PRIMARY database connection closed")
 
-if conn_winbets:
-    cursor_winbets.close()
-    conn_winbets.close()
-    print(f"✓ WINBETS database connection closed")
-
 print("\n" + "="*80)
-print("✅ DUAL DATABASE VALIDATION COMPLETE!")
+print("✅ PRIMARY DATABASE VALIDATION COMPLETE!")
 print("="*80)
 print(f"⏰ Completed at: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}")
-print(f"\n📊 Both databases have been synchronized with match results")
+print(f"\n📊 PRIMARY database updated with match results")
 print(f"📈 Profit/Loss calculated for moneyline predictions")
 print("="*80)

@@ -2,7 +2,7 @@
 Production O/U Grade Update - Complete Implementation
 ======================================================
 
-Updates agility_soccer_v1 with ou_grade (A/B/C/D) and ou_confidence.
+Updates predictions_soccer_v1_ourmodel with ou_grade (A/B/C/D) and ou_confidence.
 
 Grades:
 - A: 88.9% WR, +0.1159 avg profit ✅
@@ -30,7 +30,7 @@ DB_CONFIG = {
     'password': os.getenv('DB_PASSWORD')
 }
 
-TABLE_NAME = "agility_soccer_v1"
+TABLE_NAME = "predictions_soccer_v1_ourmodel"
 
 # Thresholds (optimized for max A+B profitability)
 OU_A_THRESHOLD = 0.750000

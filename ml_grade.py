@@ -6,7 +6,7 @@ Connects to PostgreSQL database and updates ml_grade and ml_confidence columns
 using market-aware confidence grading.
 
 Updates BOTH tables:
-- agility_soccer_v1
+- predictions_soccer_v1_ourmodel
 - agility_soccer_v3
 
 Only updates records where ml_grade is NULL.
@@ -37,7 +37,7 @@ DB_CONFIG = {
     'password': os.getenv('DB_PASSWORD')
 }
 
-TABLE_NAMES = ["agility_soccer_v1", "agility_soccer_v3"]
+TABLE_NAMES = ["predictions_soccer_v1_ourmodel", "agility_soccer_v3"]
 
 # Hardcoded quantile thresholds from historical v1shift data analysis
 Q1_THRESHOLD = 0.1264  # 12.64%

@@ -7,7 +7,7 @@ using market-aware confidence grading.
 
 Updates BOTH tables:
 - predictions_soccer_v1_ourmodel
-- agility_soccer_v3
+- predictions_soccer_v3_ourmodel
 
 Only updates records where ml_grade is NULL.
 
@@ -37,7 +37,7 @@ DB_CONFIG = {
     'password': os.getenv('DB_PASSWORD')
 }
 
-TABLE_NAMES = ["predictions_soccer_v1_ourmodel", "agility_soccer_v3"]
+TABLE_NAMES = ["predictions_soccer_v1_ourmodel", "predictions_soccer_v3_ourmodel"]
 
 # Hardcoded quantile thresholds from historical v1shift data analysis
 Q1_THRESHOLD = 0.1264  # 12.64%

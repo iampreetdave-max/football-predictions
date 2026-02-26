@@ -387,7 +387,7 @@ def check_predictions_exist(conn, match_id: int) -> bool:
 
     query = """
         SELECT ai_moneyline, ai_overunder, ai_spreads
-        FROM agility_soccer_v1
+        FROM predictions_soccer_v1_ourmodel
         WHERE match_id = %s
     """
 
@@ -412,7 +412,7 @@ def update_predictions(conn, match_id: int, predictions: Dict[str, str]):
     cursor = conn.cursor()
 
     update_query = """
-        UPDATE agility_soccer_v1
+        UPDATE predictions_soccer_v1_ourmodel
         SET ai_moneyline = %s,
             ai_overunder = %s,
             ai_spreads = %s

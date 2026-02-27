@@ -39,9 +39,9 @@ jobs:
       run: python winbetsID.py
 
     - name: Run ML_grade
-      run: python ml_grade.py
+      run: python new_ml_grade.py
 
       
     - name: Run OU_grade
-      run: python ou_grade.py
+      run: python new_ou_grade.py
 

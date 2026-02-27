@@ -45,5 +45,3 @@ jobs:
     - name: Run OU_grade
       run: python ou_grade.py
 
-    - name: Run match_mapping
-      run: python match_mapping.py

@@ -10,8 +10,9 @@ FEATURES:
 3. ✓ Uses correct column names for v3 table
 4. ✓ Normalizes team names with .strip()
 5. ✓ Calculates profit/loss for moneyline and over/under
-6. ✓ Updates PRIMARY database only
-7. ✓ Better error handling and logging
+6. ✓ Updates actual_over_under column
+7. ✓ Updates PRIMARY database only
+8. ✓ Better error handling and logging
 """
 
 import pandas as pd
@@ -218,11 +219,12 @@ for idx, row in predictions_to_validate.iterrows():
                     else:
                         actual_winner = 'Draw'
                     
-                    # Determine O/U
+                    # Determine O/U - FIXED: Now correctly stores in actual_over_under
                     actual_over_under = 'Over 2.5' if total_goals > 2.5 else 'Under 2.5'
                     
                     # =============== PROFIT/LOSS CALCULATION ===============
                     
+                    # For Over/Under
                     profit_loss_over_under = None
                     
                     # For Moneyline (predicted_winner)
@@ -244,6 +246,7 @@ for idx, row in predictions_to_validate.iterrows():
                                 actual_home_team_goals = %s,
                                 actual_away_team_goals = %s,
                                 actual_total_goals = %s,
+                                actual_over_under = %s,
                                 status = %s,
                                 profit_loss_over_under = %s,
                                 profit_loss_winner = %s
@@ -255,6 +258,7 @@ for idx, row in predictions_to_validate.iterrows():
                             float(home_score),
                             float(away_score),
                             float(total_goals),
+                            actual_over_under,
                             'SETTLED',
                             profit_loss_over_under,
                             profit_loss_winner,
@@ -312,4 +316,5 @@ print("="*80)
 print(f"⏰ Completed at: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}")
 print(f"\n📊 PRIMARY database updated with match results")
 print(f"📈 Profit/Loss calculated for moneyline predictions")
+print(f"📊 actual_over_under column updated with match results")
 print("="*80)

@@ -37,7 +37,9 @@ ALLOWED_LEAGUE_IDS = {
     # Portugal Liga
     15115,
     # Mexico Liga MX
-    12136, 15234
+    12136, 15234,
+    # FIFA Club World Cup
+    13878,
 }
 
 # League ID to Name mapping - ensures consistent league names
@@ -60,7 +62,8 @@ LEAGUE_ID_TO_NAME = {
     15115: "Portugal Liga NOS",
     16504: "USA MLS",
     12136: "Mexico Liga MX",
-    15234: "Mexico Liga MX"
+    15234: "Mexico Liga MX",
+    13878: "FIFA Club World Cup",
 }
 
 class FootyStatsAPI:
@@ -337,7 +340,7 @@ def main():
     print("🔍 LEAGUE FILTER ACTIVE")
     print(f"   Only saving matches from {len(ALLOWED_LEAGUE_IDS)} league IDs")
     print(f"   Leagues: Premier League, La Liga, Serie A, Bundesliga, MLS,")
-    print(f"            Ligue 1, Eredivisie, LigaPro, Liga MX, UEFA Youth")
+    print(f"            Ligue 1, Eredivisie, LigaPro, Liga MX, UEFA, FIFA CWC")
     print()
     
     api_client = FootyStatsAPI(API_KEY)
@@ -452,9 +455,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
-
-
-

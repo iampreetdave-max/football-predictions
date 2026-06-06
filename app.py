@@ -1,6 +1,6 @@
 """
 Football Match Prediction Streamlit App
-Automates: today_matches.py → fetch_data.py → predict.py
+Automates: today_matches.py → fetch_data.py → predicting.py
 """
 
 import streamlit as st
@@ -155,8 +155,8 @@ with col1:
     
     # Model files
     required_files = {
-        'Models': ['ridge_home_model.pkl', 'ridge_away_model.pkl', 'scaler.pkl'],
-        'Scripts': ['today_matches.py', 'fetch_data.py', 'predict.py']
+        'Models': ['home_model.pkl', 'away_model.pkl', 'scaler_new.pkl'],
+        'Scripts': ['today_matches.py', 'fetch_data.py', 'predicting.py']
     }
     
     all_files_present = True
@@ -213,9 +213,9 @@ with col1:
         st.caption("⚠️ Requires live.csv from Step 1")
     
     if st.button("3️⃣ Generate Predictions", key="step3",
-                disabled=not check_file_exists('extracted_features_complete.csv') or not check_file_exists('predict.py')):
+                disabled=not check_file_exists('extracted_features_complete.csv') or not check_file_exists('predicting.py')):
         with st.spinner("Generating predictions..."):
-            success, output = run_script('predict.py', 'Step 3: Predict Results')
+            success, output = run_script('predicting.py', 'Step 3: Predict Results')
             st.session_state.pipeline_status['step3'] = success
             if success:
                 st.success("✅ Predictions generated successfully!")
@@ -233,7 +233,7 @@ with col1:
     
     can_run_pipeline = (check_file_exists('today_matches.py') and 
                        check_file_exists('fetch_data.py') and 
-                       check_file_exists('predict.py') and
+                       check_file_exists('predicting.py') and
                        all_files_present)
     
     if st.button("▶️ RUN ALL STEPS", key="run_all", disabled=not can_run_pipeline):
@@ -259,7 +259,7 @@ with col1:
                 
                 # Step 3
                 status_text.text("3/3: Generating predictions...")
-                success3, _ = run_script('predict.py', 'Step 3: Predict Results')
+                success3, _ = run_script('predicting.py', 'Step 3: Predict Results')
                 st.session_state.pipeline_status['step3'] = success3
                 
                 if success3:

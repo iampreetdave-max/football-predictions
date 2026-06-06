@@ -1,7 +1,8 @@
+import os
 import requests
 import json
 
-API_KEY = "1eac22f8ec8e6da731a49adeae1148f14d6ceca13db5a9ffba65618f97406f4e"
+API_KEY = os.environ.get("FOOTYSTATSAPI", "")
 URL = f"https://api.football-data-api.com/league-list?key={API_KEY}"
 
 # Target leagues - exact names to match (must match exactly to avoid false positives)
